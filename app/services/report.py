@@ -56,16 +56,22 @@ def _minutes(db: OrmSession, student_id: int) -> int:
 
 
 def _weekly(db: OrmSession, student_id: int, weeks: int = 6) -> list[dict]:
-    """Số phút học theo tuần (dựa trên last_seen_at của progress)."""
+    """Số phút học theo tuần (dựa trên last_seen_at của progress).
+
+    Biên trên phải là ĐẦU NGÀY MAI, không phải 00:00 hôm nay — nếu không, mọi hoạt động
+    trong ngày hôm nay bị loại khỏi tuần hiện tại và cột cuối luôn bằng 0.
+    """
     now = datetime.utcnow()
+    today = now.date()
     out = []
     for i in range(weeks - 1, -1, -1):
-        start = (now - timedelta(days=7 * (i + 1))).date()
-        end = (now - timedelta(days=7 * i)).date()
+        start = today - timedelta(days=7 * (i + 1))
+        end = today - timedelta(days=7 * i)
         rows = db.execute(
             select(Progress).where(Progress.student_id == student_id,
                                    Progress.last_seen_at >= datetime.combine(start, datetime.min.time()),
-                                   Progress.last_seen_at < datetime.combine(end, datetime.min.time()))
+                                   Progress.last_seen_at < datetime.combine(end + timedelta(days=1),
+                                                                            datetime.min.time()))
         ).scalars()
         out.append({"label": f"tuần {weeks - i}", "minutes": round(sum(p.seconds for p in rows) / 60)})
     return out

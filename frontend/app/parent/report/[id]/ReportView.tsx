@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
+import WeeklyChart from "@/components/WeeklyChart";
 
 type Report = {
   student: { id: number; name: string; cefr: string | null };
@@ -59,6 +60,11 @@ export default function ReportView({ studentId }: { studentId: string }) {
         {report.weakest && (
           <p className="explain">Con đang yếu nhất ở <b>{report.weakest.label}</b>. Nên nhắc con luyện thêm.</p>
         )}
+      </div>
+
+      <div className="card">
+        <h2>Thời gian học 6 tuần gần đây</h2>
+        <WeeklyChart data={report.weekly} />
       </div>
     </>
   );
