@@ -2,11 +2,11 @@
    Nguyên tắc: chữ đọc được (≥15px cho nội dung), nút ≥44px, một hành động chính mỗi màn. */
 
 :root {
-  --ink: #0d1522;
-  --ink-2: #1d2939;
-  --muted: #475467;
-  --line: #dfe3ea;
-  --line-2: #eef1f5;
+  --ink: #05080d;
+  --ink-2: #101828;
+  --muted: #2b3644;
+  --line: #c9d0da;
+  --line-2: #e3e8ef;
 
   --blue: #2f6bff;
   --blue-dark: #1f4fd8;
@@ -40,9 +40,11 @@ body {
     var(--bg);
   color: var(--ink);
   font-family: var(--font);
-  font-size: 17px;
-  line-height: 1.6;
+  font-size: 17.5px;
+  font-weight: 500;
+  line-height: 1.62;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 a { color: var(--blue); text-decoration: none; }
@@ -114,7 +116,7 @@ button.link:hover { color: var(--red); background: var(--red-soft); }
 .hero .muted, .hero p { color: rgba(255, 255, 255, .88); margin: 0; font-size: .98rem; }
 
 /* ---------------------------------------------------------------- form */
-.form label { display: block; margin: .8rem 0; font-size: .97rem; color: var(--ink-2); font-weight: 500; }
+.form label { display: block; margin: .8rem 0; font-size: 1.02rem; color: var(--ink-2); font-weight: 600; }
 .form input, .form select, .form textarea {
   width: 100%; margin-top: .35rem; padding: .7rem .8rem;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -149,7 +151,7 @@ a.btn { color: #fff; }
   font-size: .95rem; border: 1px solid transparent;
 }
 .alert-error { background: var(--red-soft); color: #912018; border-color: #f5c6c2; }
-.muted { color: var(--muted); font-size: .95rem; }
+.muted { color: var(--muted); font-size: 1rem; font-weight: 500; }
 .done { color: var(--green); font-weight: 600; }
 .wrong { color: var(--red); font-weight: 600; }
 
@@ -161,10 +163,10 @@ a.btn { color: #fff; }
 }
 .table th, .table td { padding: .7rem .85rem; text-align: left; border-bottom: 1px solid var(--line-2); }
 .table th {
-  background: #f4f7fb; font-size: .9rem; letter-spacing: .01em;
-  color: var(--ink-2); font-weight: 700;
+  background: #e9eef6; font-size: .95rem; letter-spacing: 0;
+  color: #05080d; font-weight: 800;
 }
-.table td { font-size: 1rem; color: var(--ink); }
+.table td { font-size: 1.02rem; color: #05080d; font-weight: 500; }
 .table tbody tr:last-child td { border-bottom: 0; }
 .table tbody tr:hover td { background: #fafbff; }
 .overdue td { background: #fff7f6; }
@@ -310,6 +312,17 @@ a.btn { color: #fff; }
   border-radius: 999px; margin-left: .4rem; vertical-align: middle;
 }
 .row-between { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+
+/* ---------------------------------------------------------------- đậm chữ (yêu cầu: dễ đọc trên màn hình thường) */
+.stat-label, .chart-label, .bell-list em, .notice-list em, .foot,
+.hero .muted, .empty, .hint { font-size: .95rem; color: var(--muted); font-weight: 600; }
+.stat-value { color: var(--ink); font-weight: 800; }
+.bell-list span, .notice-list p { color: var(--ink-2); font-weight: 500; font-size: .96rem; }
+.form input, .form select, .form textarea { color: var(--ink); font-weight: 500; font-size: 1.03rem; }
+.form input::placeholder, .form textarea::placeholder { color: #5c6779; }
+.opt { color: var(--ink); font-weight: 500; }
+.opt:hover { background: #eef3ff; }
+.btn { font-weight: 700; }
 
 /* ---------------------------------------------------------------- tabs */
 .tabs { display: inline-flex; gap: .35rem; background: var(--blue-soft); padding: .3rem;
