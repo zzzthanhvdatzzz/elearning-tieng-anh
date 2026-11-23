@@ -42,8 +42,11 @@ def parent_requests(user: User = Depends(teacher_only), db: OrmSession = Depends
 
     return {"items": [
         {"id": r["link"].id, "student": r["student"].full_name or r["student"].email,
+         "student_id": r["student"].id,
          "klass": r["klass"].name,
-         "parent": (r["parent"].full_name or r["parent"].email) if r["parent"] else ""}
+         "parent": (r["parent"].full_name or r["parent"].email) if r["parent"] else "",
+         "parent_email": r["parent"].email if r["parent"] else "",
+         "at": r["link"].requested_at.strftime("%d/%m/%Y %H:%M") if r["link"].requested_at else ""}
         for r in parent_svc.pending_for_teacher(db, user)
     ]}
 
