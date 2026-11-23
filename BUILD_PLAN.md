@@ -34,7 +34,12 @@ màn hình tạo lớp S11 của giáo viên (đầu việc E1) — lớp hiện
 - ✅ D1: `services/placement.py` + `routers/placement.py` — 25 câu (10/8/7), bài viết,
   chấm tự động, hàng đợi chấm của giáo viên, giáo viên xác nhận CEFR (±1 bậc, bắt buộc
   nhận xét khi điểm < 5,0), BR4 chặn làm lại trong học kỳ. Chạy thật: 10.0 + 8.0 → 9.4 → B2.
-- ⬜ D2: lộ trình Unit + trang học bài (S5–S6), cộng dồn thời gian học vào `progress`.
+- ✅ D2: `services/learning.py` + `routers/learning.py` — S5 lộ trình theo khối lớp (6 bài/Unit),
+  S6 trang học bài (mục tiêu, từ vựng, ngữ pháp, bài đọc, audio + transcript ẩn/hiện),
+  `POST /lessons/{id}/progress` cộng dồn giây, phần trăm chỉ tăng và kẹp 0–100, chặn client
+  gửi số giây vô lý (3600s/lần). Chạy thật: 120s → 180s → 190s + 100%, bài tiếp theo tự chuyển.
+
+**Mốc M3 đã đóng**: đăng nhập → placement → xếp CEFR → mở lộ trình → học bài → ghi tiến độ.
 
 Lỗ hổng thứ 4 phát hiện khi code: **bảng `submissions` trong Bảng 3.8 thiếu cột lưu nội
 dung bài viết / đường dẫn audio**. Đã thêm `text_content`, `audio_path`, `cefr_proposed`,

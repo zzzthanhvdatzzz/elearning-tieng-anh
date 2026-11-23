@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Lộ trình học{% endblock %}
+{% block content %}
+<h1>Lộ trình học</h1>
+
+{% if summary %}
+  <div class="card stats">
+    <span><b>{{ summary.lessons_done }}</b> bài hoàn thành</span>
+    <span><b>{{ summary.lessons_started }}</b> bài đã học</span>
+    <span><b>{{ (summary.total_seconds / 60) | round(0) | int }}</b> phút học</span>
+  </div>
+{% endif %}
+
+{% if next %}
+  <div class="card nextup">
+    <p class="muted">Bài tiếp theo</p>
+    <p><strong>{{ next.lesson.title }}</strong> — {{ next.unit.title }}</p>
+    <p><a class="btn" href="/lessons/{{ next.lesson.id }}">Học tiếp →</a></p>
+  </div>
+{% endif %}
+
+{% if not plan %}
+  <div class="alert alert-error">Bạn chưa được ghi danh vào lớp nào, nên chưa có lộ trình.</div>
+{% endif %}
+
+{% for unit in plan %}
+  <section class="card">
+    <h2>{{ unit.unit.title }}</h2>
+    <p class="muted">Unit {{ unit.unit.code }} · {{ unit.lessons|length }} bài · hoàn thành {{ unit.percent }}%</p>
+    <ol class="lesson-list">
+      {% for item in unit.lessons %}
+        <li>
+          <a href="/lessons/{{ item.lesson.id }}">
+            {{ item.lesson.title }}
+          </a>
+          <span class="skill">{{ item.lesson.skill }}</span>
+          {% if item.percent >= 100 %}
+            <span class="done">✓ đã học</span>
+          {% elif item.percent > 0 %}
+            <span class="muted">{{ item.percent }}%</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  </section>
+{% endfor %}
+{% endblock %}

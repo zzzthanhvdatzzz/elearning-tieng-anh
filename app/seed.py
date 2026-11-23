@@ -139,32 +139,60 @@ def ensure_placement_content(db: OrmSession) -> None:
     db.commit()
 
 
+LESSON_SPECS = [
+    ("U1-L1", "Getting Started — Our Local Environment", "vocab", 10,
+     {"objectives": ["Nêu được 5 địa điểm trong khu vực sống",
+                     "Dùng được thì hiện tại đơn miêu tả nơi chốn"],
+      "vocab": [{"word": "market", "vi": "chợ"}, {"word": "temple", "vi": "đền, chùa"},
+                {"word": "handicraft", "vi": "đồ thủ công"}, {"word": "pottery", "vi": "đồ gốm"}],
+      "grammar": "Hiện tại đơn: S + V(s/es) — miêu tả đặc điểm nơi chốn."},
+     "Our village is famous for its handicraft. Every Sunday, people go to the market..."),
+    ("U1-L2", "A Closer Look 1 — Vocabulary", "vocab", 12,
+     {"objectives": ["Mở rộng 8 từ về nghề truyền thống"],
+      "vocab": [{"word": "artisan", "vi": "nghệ nhân"}, {"word": "workshop", "vi": "xưởng"},
+                {"word": "carve", "vi": "chạm khắc"}, {"word": "weave", "vi": "dệt"}],
+      "grammar": "Danh từ ghép: handicraft village, pottery workshop."}, None),
+    ("U1-L3", "A Closer Look 2 — Grammar", "grammar", 12,
+     {"objectives": ["Phân biệt thì hiện tại đơn và hiện tại tiếp diễn"],
+      "grammar": "Hiện tại đơn: thói quen. Hiện tại tiếp diễn: đang diễn ra. "
+                 "Dấu hiệu: every day / now, at the moment."}, None),
+    ("U1-L4", "Communication — Asking the Way", "speaking", 10,
+     {"objectives": ["Hỏi và chỉ đường trong khu vực sống"],
+      "grammar": "Could you tell me how to get to ...? — Go straight, turn left at ..."}, None),
+    ("U1-L5", "Skills 1 — Reading", "reading", 15,
+     {"objectives": ["Đọc hiểu đoạn văn 150 từ về làng nghề"],
+      "reading": "Duong Lam is an ancient village about 50 km from Hanoi. It is famous for "
+                 "its old houses made of laterite and its traditional soy sauce. Visitors can "
+                 "walk or cycle around the village while local families open their doors."}, None),
+    ("U1-L6", "Skills 2 — Writing", "writing", 15,
+     {"objectives": ["Viết đoạn 80 từ giới thiệu nơi mình sống"],
+      "grammar": "Cấu trúc: câu chủ đề → 2–3 chi tiết → câu kết."}, None),
+]
+
+
 def ensure_demo_unit(db: OrmSession) -> None:
-    if db.execute(select(Unit).where(Unit.code == "U1", Unit.grade == 8)).scalar_one_or_none():
-        return
-    unit = Unit(grade=8, code="U1", title="Local Environment", order_no=1)
-    db.add(unit)
-    db.flush()
-    lesson = Lesson(
-        unit_id=unit.id, code="U1-L1", title="Getting Started — Our Local Environment",
-        skill="vocab", order_no=1,
-        content=json.dumps({
-            "objectives": ["Nêu được 5 địa điểm trong khu vực sống",
-                           "Dùng được thì hiện tại đơn miêu tả nơi chốn"],
-            "vocab": [{"word": "market", "vi": "chợ"},
-                      {"word": "temple", "vi": "đền, chùa"},
-                      {"word": "handicraft", "vi": "đồ thủ công"}],
-            "grammar": "Hiện tại đơn: S + V(s/es) — miêu tả đặc điểm nơi chốn.",
-        }, ensure_ascii=False),
-        transcript="Our village is famous for its handicraft. Every Sunday, people go to the market...",
-    )
-    db.add(lesson)
-    db.flush()
-    for i in range(1, 11):
-        db.add(Question(lesson_id=lesson.id, qtype="mcq", skill="grammar", order_no=i,
-                        prompt=f"Câu mẫu {i}: My village ______ famous for its handicraft.",
-                        options=json.dumps(["is", "are", "be", "been"]), correct_key="A",
-                        explanation="Chủ ngữ số ít 'My village' → dùng 'is'."))
+    """Unit 1 lớp 8 với 6 bài theo cấu trúc sách; idempotent theo mã bài."""
+    unit = db.execute(select(Unit).where(Unit.code == "U1", Unit.grade == 8)).scalar_one_or_none()
+    if unit is None:
+        unit = Unit(grade=8, code="U1", title="Local Environment", order_no=1)
+        db.add(unit)
+        db.flush()
+
+    for order, (code, title, skill, minutes, content, transcript) in enumerate(LESSON_SPECS, start=1):
+        existing = db.execute(select(Lesson).where(Lesson.code == code)).scalar_one_or_none()
+        if existing is not None:
+            continue
+        payload = {**content, "minutes": minutes}
+        lesson = Lesson(unit_id=unit.id, code=code, title=title, skill=skill, order_no=order,
+                        content=json.dumps(payload, ensure_ascii=False), transcript=transcript)
+        db.add(lesson)
+        db.flush()
+        if code == "U1-L1":
+            for i in range(1, 11):
+                db.add(Question(lesson_id=lesson.id, qtype="mcq", skill="grammar", order_no=i,
+                                prompt=f"Câu mẫu {i}: My village ______ famous for its handicraft.",
+                                options=json.dumps(["is", "are", "be", "been"]), correct_key="A",
+                                explanation="Chủ ngữ số ít 'My village' → dùng 'is'."))
     db.commit()
 
 

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}{{ lesson.title }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/units">← Lộ trình</a> · {{ unit.title }}</p>
+<h1>{{ lesson.title }}</h1>
+
+{% if content.objectives %}
+  <div class="card">
+    <h2>Mục tiêu bài học</h2>
+    <ul>{% for o in content.objectives %}<li>{{ o }}</li>{% endfor %}</ul>
+  </div>
+{% endif %}
+
+{% if lesson.audio_url or lesson.transcript %}
+  <div class="card">
+    <h2>Phần nghe</h2>
+    {% if lesson.audio_url %}
+      <audio controls preload="none" src="{{ lesson.audio_url }}"></audio>
+    {% else %}
+      <p class="muted">Audio của bài này sẽ được nhóm Nội dung bổ sung.</p>
+    {% endif %}
+    {% if lesson.transcript %}
+      <details>
+        <summary>Hiện transcript (nên nghe trước khi mở)</summary>
+        <p class="transcript">{{ lesson.transcript }}</p>
+      </details>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% if content.vocab %}
+  <div class="card">
+    <h2>Từ vựng</h2>
+    <table class="table">
+      <thead><tr><th>Từ</th><th>Nghĩa</th></tr></thead>
+      <tbody>
+        {% for w in content.vocab %}
+          <tr><td><b>{{ w.word }}</b></td><td>{{ w.vi }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+{% if content.grammar %}
+  <div class="card">
+    <h2>Ngữ pháp</h2>
+    <p>{{ content.grammar }}</p>
+  </div>
+{% endif %}
+
+{% if content.reading %}
+  <div class="card">
+    <h2>Bài đọc</h2>
+    <p class="reading">{{ content.reading }}</p>
+  </div>
+{% endif %}
+
+<div class="card actions">
+  <p class="muted">Tiến độ bài này: <b id="pct">{{ percent }}%</b> ·
+    đã học <b id="mins">{{ (seconds / 60) | round(1) }}</b> phút</p>
+  {% if percent < 100 %}
+    <button type="button" id="done-btn" class="btn">Đánh dấu đã học xong</button>
+  {% else %}
+    <p class="done">✓ Bạn đã hoàn thành bài này</p>
+  {% endif %}
+</div>
+
+<script>
+(() => {
+  const CSRF = document.body.dataset.csrf;
+  const LESSON = {{ lesson.id }};
+  const EST_MIN = {{ content.minutes | default(10) }};
+  const pctEl = document.getElementById('pct');
+  const minEl = document.getElementById('mins');
+  let seconds = 0, sent = 0, visible = !document.hidden;
+
+  document.addEventListener('visibilitychange', () => { visible = !document.hidden; });
+  setInterval(() => { if (visible) seconds += 1; }, 1000);
+
+  function computedPercent(s) {
+    // Thời gian ước lượng của bài do nội dung quy định; 100% chỉ khi bấm "đã học xong".
+    return Math.min(95, Math.round(s / (EST_MIN * 60) * 100));
+  }
+
+  async function flush(body, keepalive = false) {
+    try {
+      const r = await fetch(`/lessons/${LESSON}/progress`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRF-Token': CSRF},
+        body: JSON.stringify(body),
+        keepalive,
+      });
+      if (!r.ok) return;
+      const data = await r.json();
+      pctEl.textContent = data.percent + '%';
+      minEl.textContent = (data.seconds / 60).toFixed(1);
+      sent = seconds;
+    } catch (e) { /* mất mạng thì lần sau gửi bù */ }
+  }
+
+  setInterval(() => {
+    if (seconds > sent) flush({seconds: seconds - sent, percent: computedPercent(seconds)});
+  }, 30000);
+
+  window.addEventListener('pagehide', () => {
+    if (seconds > sent) flush({seconds: seconds - sent, percent: computedPercent(seconds)}, true);
+  });
+
+  const btn = document.getElementById('done-btn');
+  if (btn) btn.addEventListener('click', async () => {
+    await flush({seconds: Math.max(0, seconds - sent), completed: true});
+    pctEl.textContent = '100%';
+    btn.disabled = true;
+    btn.textContent = '✓ Đã hoàn thành';
+  });
+})();
+</script>
+{% endblock %}

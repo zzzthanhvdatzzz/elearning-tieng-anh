@@ -46,5 +46,19 @@ select { width:100%; padding:.55rem; border:1px solid var(--line); border-radius
 .form textarea { width:100%; padding:.55rem; border:1px solid var(--line); border-radius:8px;
   font-family:inherit; font-size:1rem; margin-top:.25rem; }
 .submit { margin:1rem 0 2rem; }
+/* Lộ trình + trang học bài */
+.stats { display:flex; gap:1.2rem; flex-wrap:wrap; font-size:.95rem; }
+.stats b { font-size:1.1rem; }
+.nextup { border-left:4px solid var(--blue); }
+.lesson-list { padding-left:1.2rem; }
+.lesson-list li { padding:.35rem 0; border-bottom:1px dashed var(--line); }
+.lesson-list li:last-child { border-bottom:0; }
+.skill { font-size:.75rem; background:#eef2f7; color:var(--muted); border-radius:4px;
+  padding:.1rem .4rem; margin-left:.4rem; text-transform:uppercase; }
+.done { color:#1b7f4b; font-weight:600; margin-left:.5rem; }
+.transcript { background:#f7f9fc; padding:.8rem; border-radius:8px; white-space:pre-line; }
+.reading { white-space:pre-line; }
+.actions { display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
+.actions p { margin:0; }
 .foot { text-align:center; color:var(--muted); font-size:.85rem; padding:2rem 1rem; }
 @media (max-width:360px) { .container { padding:1rem .75rem; } .topbar { padding:.5rem .75rem; } }
