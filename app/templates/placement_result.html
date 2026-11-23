@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Kết quả kiểm tra đầu vào{% endblock %}
+{% block content %}
+<h1>Kết quả kiểm tra đầu vào</h1>
+
+{% if error %}
+  <div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+{% if submission %}
+  <div class="card">
+    <p><strong>Điểm trắc nghiệm:</strong> {{ submission.auto_score }} / 10
+      <span class="muted">({{ total_questions }} câu)</span></p>
+
+    {% if parts %}
+      <ul class="parts">
+        {% for skill, score in parts.items() %}
+          <li>{{ {"grammar": "Ngữ pháp", "reading": "Đọc hiểu", "listening": "Nghe"}.get(skill, skill) }}:
+            <strong>{{ score }}</strong> / 10</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if submission.status == "graded" %}
+      <p><strong>Điểm bài viết:</strong> {{ submission.teacher_score }} / 10</p>
+      <p><strong>Điểm tổng hợp:</strong> {{ submission.final_score }} / 10</p>
+      <p><strong>Trình độ đã xác nhận:</strong>
+        <span class="badge">{{ submission.cefr_proposed }}</span></p>
+    {% else %}
+      <p><strong>Bài viết:</strong> đang chờ giáo viên chấm.</p>
+      <p class="muted">Chưa có điểm bài viết thì hệ thống chưa xếp trình độ (luật BR: thiếu một
+      trong hai phần thì không trả điểm cuối). Bạn sẽ nhận thông báo khi giáo viên chấm xong.</p>
+    {% endif %}
+  </div>
+  <p><a class="btn" href="/me">Về trang tài khoản</a></p>
+{% elif not error %}
+  <div class="card"><p>Bạn chưa nộp bài kiểm tra đầu vào.</p>
+    <p><a class="btn" href="/placement">Làm bài ngay</a></p></div>
+{% endif %}
+{% endblock %}

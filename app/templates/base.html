@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ title or "Học tiếng Anh" }}{% endblock %} — Học tiếng Anh THCS &amp; THPT</title>
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">English<span>Hub</span></a>
+    <nav>
+      {% if user %}
+        {% if user.role == "student" %}<a href="/placement">Kiểm tra đầu vào</a>{% endif %}
+        {% if user.role == "teacher" %}<a href="/teacher/placement">Chấm bài</a>{% endif %}
+        <span class="who">{{ user.full_name or user.email }} · {{ role_label(user.role) }}</span>
+        <form method="post" action="/auth/logout" class="inline">
+          <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+          <button type="submit" class="link">Đăng xuất</button>
+        </form>
+      {% else %}
+        <a href="/auth/login">Đăng nhập</a>
+        <a href="/auth/register">Đăng ký</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="container">
+    {% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="foot">Nhóm 05 — Đồ án tích hợp hệ thống</footer>
+</body>
+</html>

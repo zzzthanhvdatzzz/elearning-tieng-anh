@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Kiểm tra đầu vào{% endblock %}
+{% block content %}
+<h1>Kiểm tra đầu vào</h1>
+<p class="muted">{{ total }} câu trắc nghiệm + 1 bài viết 80 từ. Nộp xong bạn thấy điểm ngay,
+trình độ CEFR sẽ được giáo viên xác nhận.</p>
+
+<form method="post" action="/placement/submit" class="exam">
+  <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+
+  {% for label, items in groups %}
+    <section class="card">
+      <h2>{{ label }}</h2>
+      {% for item in items %}
+        <fieldset class="q">
+          <legend><span class="qno">{{ loop.index }}.</span> {{ item.q.prompt }}</legend>
+          {% for opt in item.options %}
+            {% set letter = "ABCD"[loop.index0] %}
+            <label class="opt">
+              <input type="radio" name="q_{{ item.q.id }}" value="{{ letter }}"> <b>{{ letter }}.</b> {{ opt }}
+            </label>
+          {% endfor %}
+        </fieldset>
+      {% endfor %}
+    </section>
+  {% endfor %}
+
+  <section class="card">
+    <h2>Phần 4 — Bài viết (khoảng 80 từ)</h2>
+    <p>Viết về nơi bạn đang sống: có gì đáng tự hào, có gì cần cải thiện?</p>
+    <textarea name="essay" id="essay" rows="8" class="essay"
+              placeholder="Write about your neighbourhood..."></textarea>
+    <p class="muted">Số từ: <span id="wc">0</span> / 80</p>
+  </section>
+
+  <button type="submit" class="submit">Nộp bài</button>
+</form>
+
+<script>
+  const ta = document.getElementById('essay');
+  const wc = document.getElementById('wc');
+  ta.addEventListener('input', () => {
+    wc.textContent = ta.value.trim() ? ta.value.trim().split(/\s+/).length : 0;
+  });
+</script>
+{% endblock %}

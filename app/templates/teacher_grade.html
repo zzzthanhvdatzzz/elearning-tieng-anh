@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Chấm bài{% endblock %}
+{% block content %}
+<h1>Chấm bài viết — học sinh #{{ submission.student_id }}</h1>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="card">
+  <p><strong>Điểm trắc nghiệm:</strong> {{ submission.auto_score }} / 10
+    <span class="muted">25 câu, chấm tự động</span></p>
+  <h2>Bài viết của học sinh</h2>
+  {% if submission.text_content %}
+    <blockquote class="essay-view">{{ submission.text_content }}</blockquote>
+  {% else %}
+    <p class="muted">Học sinh chưa viết bài.</p>
+  {% endif %}
+</div>
+
+<form method="post" action="/teacher/placement/{{ submission.id }}/grade" class="card form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+  <h2>Rubric — 4 tiêu chí, mỗi tiêu chí 0–2,5</h2>
+  {% for c in criteria %}
+    <label>{{ labels[c] }}
+      <input type="number" name="{{ c }}" min="0" max="2.5" step="0.5" required value="2">
+    </label>
+  {% endfor %}
+
+  <label>Điều chỉnh trình độ
+    <select name="level_override">
+      <option value="0">Giữ nguyên mức hệ thống đề xuất</option>
+      <option value="1">Nâng 1 bậc</option>
+      <option value="-1">Hạ 1 bậc</option>
+    </select>
+  </label>
+
+  <label>Nhận xét (bắt buộc nếu tổng điểm dưới 5,0)
+    <textarea name="comment" rows="4"></textarea>
+  </label>
+
+  <button type="submit">Lưu điểm và xác nhận trình độ</button>
+</form>
+{% endblock %}

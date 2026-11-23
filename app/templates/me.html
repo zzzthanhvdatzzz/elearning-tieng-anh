@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Tài khoản{% endblock %}
+{% block content %}
+<h1>Xin chào, {{ user.full_name or user.email }}</h1>
+<div class="card">
+  <p><strong>Email:</strong> {{ user.email }}</p>
+  <p><strong>Vai trò:</strong> {{ role_label(user.role) }}</p>
+  <p><strong>Trình độ:</strong> {{ user.cefr_level or "chưa xếp" }}</p>
+</div>
+<p class="muted">Đây là trang tạm của Sprint 0. Dashboard riêng cho từng vai trò
+(S4 học sinh, S10 giáo viên, S14 phụ huynh, S15 quản trị) sẽ được thay vào khi làm từng module.</p>
+{% endblock %}

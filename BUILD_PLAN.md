@@ -1,0 +1,65 @@
+# Lộ trình code — nối báo cáo với mã nguồn
+
+Mỗi mục dưới đây ứng với một mã đầu việc trong Bảng 4.1 và một cột mốc M1–M5.
+Làm đúng thứ tự này vì phụ thuộc đã ghi ở Phụ lục A.
+
+## Vá báo cáo trước khi gõ dòng đầu (30 phút)
+
+1. **F4 bị thiếu trong Bảng 2.1.** Bảng nhảy F3 → F5 nhưng F4 (kiểm tra đầu vào) được
+   dùng khắp nơi: mục 2.6 (Sprint 1), Bảng 2.6, UC-03, mục 3.9. Phải thêm dòng F4 vào
+   Bảng 2.1 và đánh số lại, nếu không ma trận truy vết bị đứt ngay từ đầu.
+2. **Bảng 3.9 thiếu 3 endpoint mà thiết kế khác đã giả định:** danh sách bài giao cho
+   học sinh (`GET /assignments`), hàng đợi chấm (`GET /teacher/submissions?status=pending`
+   — mục 3.11 S12 cần), và đọc/thông báo (`GET /notifications` — bảng `notifications`
+   có trong ERD nhưng không có API). Thêm vào bảng cho khớp 16 bảng.
+3. **Tên hệ thống đang để trống.** Toàn báo cáo có câu kiểu "Kiến trúc bốn lớp của "
+   — biến tên sản phẩm bị mất. Chốt một tên rồi thay hàng loạt (Word: Ctrl+H, tìm
+   "của  trong" → "của <Tên> trong").
+
+## Tuần 2 — Sprint 0 (mốc M2): đăng nhập chạy được ✅ ĐÃ XONG
+
+| Việc | Mã | Trạng thái |
+|---|---|---|
+| Khung repo, CI | C1 | ✅ `main.py`, `db.py`, pytest, `.gitignore` |
+| Model 16 bảng + seed | C3 | ✅ 17 bảng (16 theo Bảng 3.8 + `sessions`), `app/seed.py` |
+| Auth: đăng ký/đăng nhập/phiên | C2 | ✅ bcrypt cost 12, session DB, CSRF double-submit, 9 test |
+| base.html + S1–S2 | C4 | ✅ `base.html`, `auth_login.html`, `auth_register.html` (CSS tay, Bootstrap thay ở C4 hoàn chỉnh) |
+
+Nghiệm thu M2: giáo viên đăng nhập, thấy tên + vai trò ở `/me`. Còn thiếu để đóng M2:
+màn hình tạo lớp S11 của giáo viên (đầu việc E1) — lớp hiện tạo bằng seed.
+
+## Tuần 3 — Sprint 1 (M3): vòng học mở
+
+- ✅ D6: `services/scoring.py` — BR5, BR6, BR8, ngưỡng CEFR, rubric; 18 test riêng.
+- ✅ D1: `services/placement.py` + `routers/placement.py` — 25 câu (10/8/7), bài viết,
+  chấm tự động, hàng đợi chấm của giáo viên, giáo viên xác nhận CEFR (±1 bậc, bắt buộc
+  nhận xét khi điểm < 5,0), BR4 chặn làm lại trong học kỳ. Chạy thật: 10.0 + 8.0 → 9.4 → B2.
+- ⬜ D2: lộ trình Unit + trang học bài (S5–S6), cộng dồn thời gian học vào `progress`.
+
+Lỗ hổng thứ 4 phát hiện khi code: **bảng `submissions` trong Bảng 3.8 thiếu cột lưu nội
+dung bài viết / đường dẫn audio**. Đã thêm `text_content`, `audio_path`, `cefr_proposed`,
+`graded_by` — cần bổ sung vào báo cáo cho khớp.
+
+## Tuần 4 — Sprint 2 (M4a): nộp bài và chấm
+
+- D4 ghi âm MediaRecorder (**phải chạy HTTPS, kể cả localhost** — rủi ro R2);
+  phương án dự phòng: tải file lên.
+- D5 luyện viết, nháp tự lưu 10 giây, đếm từ.
+- D7 rubric 4 tiêu chí × 0–2,5; BR6 điểm cuối = 0,7 × tự động + 0,3 × giáo viên;
+  chặn lưu khi điểm < 5,0 mà không có nhận xét (AC12.2).
+
+## Tuần 5 — Sprint 3 (M4b): lớp, báo cáo, import
+
+- E1/E2 lớp, ghi danh, giao bài (deadline múi giờ VN, `max_attempts`).
+- E3/E4 báo cáo tính lại mỗi lần xem (quyết định ở Bảng 3.12), email tuần thứ Hai.
+- E5/E6 liên kết phụ huynh + import Excel (bỏ dòng lỗi, báo số dòng).
+- F3 Docker + Nginx + Uvicorn.
+
+## Tuần 6 — UAT và bàn giao (M5)
+
+- F1/F2 system test theo kịch bản, UAT, biên bản.
+- F4 hồ sơ bàn giao: README, deploy.md, hướng dẫn sử dụng.
+
+## Thứ tự cắt khi trễ (mục 2.6)
+
+F7 (ghi âm) → F14 (báo cáo phụ huynh) → F15 (import) → **không cắt F12**.
