@@ -36,6 +36,29 @@ def _owned(db: OrmSession, teacher: User, submission_id: int) -> Submission:
     return submission
 
 
+@router.get("/teacher/parent-requests")
+def parent_requests(user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
+    from app.services import parent as parent_svc
+
+    return {"items": [
+        {"id": r["link"].id, "student": r["student"].full_name or r["student"].email,
+         "klass": r["klass"].name,
+         "parent": (r["parent"].full_name or r["parent"].email) if r["parent"] else ""}
+        for r in parent_svc.pending_for_teacher(db, user)
+    ]}
+
+
+@router.post("/teacher/parent-requests/{link_id}")
+def decide_parent(link_id: int, payload: dict = Body(...),
+                  user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
+    from app.services import parent as parent_svc
+
+    ok, error = parent_svc.decide(db, user, link_id, bool(payload.get("approve")))
+    if not ok:
+        raise HTTPException(status_code=422, detail=error)
+    return {"ok": True}
+
+
 @router.get("/teacher/classes")
 def teacher_classes(user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
     return {"items": [

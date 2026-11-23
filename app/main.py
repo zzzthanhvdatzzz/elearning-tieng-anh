@@ -42,6 +42,9 @@ app.include_router(api.router)
 from app.routers import api_teacher  # noqa: E402  (import sau api để dùng lại api_user)
 
 app.include_router(api_teacher.router)
+from app.routers import api_misc  # noqa: E402
+
+app.include_router(api_misc.router)
 
 # Frontend Next.js chạy cổng 3000 → cần CORS kèm credentials (cookie phiên).
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
