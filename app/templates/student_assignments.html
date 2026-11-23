@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Việc cần làm{% endblock %}
+{% block content %}
+<h1>Bài được giao</h1>
+
+{% if todo %}
+  <table class="table">
+    <thead><tr><th>Bài</th><th>Hạn nộp</th><th>Lượt</th><th>Điểm cao nhất</th><th></th></tr></thead>
+    <tbody>
+      {% for t in todo %}
+        <tr class="{{ 'overdue' if t.overdue and t.best is none }}">
+          <td>{{ t.assignment.title }}</td>
+          <td>
+            {% if t.assignment.deadline %}
+              {{ t.assignment.deadline.strftime("%d/%m/%Y %H:%M") }}
+              {% if t.overdue %}<span class="wrong">(đã quá hạn)</span>{% endif %}
+            {% else %}<span class="muted">không hạn</span>{% endif %}
+          </td>
+          <td>{{ t.attempts_used }}/{{ t.assignment.max_attempts }}</td>
+          <td>{{ t.best if t.best is not none else "—" }}</td>
+          <td>
+            {% if t.assignment.lesson_id %}
+              {% if t.assignment.kind == "writing" %}
+                <a href="/writing/{{ t.assignment.lesson_id }}">Viết bài →</a>
+              {% else %}
+                <a href="/practice/{{ t.assignment.lesson_id }}">Làm bài →</a>
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="card"><p>Chưa có bài nào được giao cho lớp của bạn.</p></div>
+{% endif %}
+{% endblock %}

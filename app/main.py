@@ -15,7 +15,7 @@ from app.csrf import CsrfCookieMiddleware, verify_csrf
 from app.db import get_db
 from app.deps import current_user, optional_user
 from app.models import User
-from app.routers import auth, learning, placement, practice
+from app.routers import auth, learning, placement, practice, report, teacher, writing
 from app.templating import templates
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -30,6 +30,9 @@ app.include_router(auth.router)
 app.include_router(placement.router)
 app.include_router(learning.router)
 app.include_router(practice.router)
+app.include_router(writing.router)
+app.include_router(teacher.router)
+app.include_router(report.router)
 
 
 @app.get("/health")

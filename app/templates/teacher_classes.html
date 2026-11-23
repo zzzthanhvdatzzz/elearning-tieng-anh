@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Lớp của tôi{% endblock %}
+{% block content %}
+<h1>Lớp của tôi</h1>
+
+<div class="card">
+  <h2>Tạo lớp mới</h2>
+  <form method="post" action="/teacher/classes" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+    <label>Tên lớp
+      <input type="text" name="name" required placeholder="VD: 8A3 — Tiếng Anh">
+    </label>
+    <label>Khối
+      <select name="grade">
+        <option value="8">Khối 8 (THCS)</option>
+        <option value="10">Khối 10 (THPT)</option>
+      </select>
+    </label>
+    <button type="submit">Tạo lớp và sinh mã tham gia</button>
+  </form>
+</div>
+
+{% if rows %}
+  <table class="table">
+    <thead><tr><th>Lớp</th><th>Khối</th><th>Mã tham gia</th><th>Học sinh</th><th></th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ r.klass.name }}</td>
+          <td>{{ r.klass.grade }}</td>
+          <td><code>{{ r.klass.join_code }}</code></td>
+          <td>{{ r.students }}</td>
+          <td><a href="/teacher/classes/{{ r.klass.id }}">Quản lý →</a></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="card"><p>Bạn chưa có lớp nào. Tạo lớp ở trên để nhận mã tham gia.</p></div>
+{% endif %}
+{% endblock %}

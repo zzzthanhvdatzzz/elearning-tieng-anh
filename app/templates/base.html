@@ -12,8 +12,12 @@
     <nav>
       {% if user %}
         {% if user.role == "student" %}<a href="/units">Lộ trình</a>
+          <a href="/assignments">Bài được giao</a>
+          <a href="/reports/student/{{ user.id }}">Báo cáo</a>
           <a href="/placement">Kiểm tra đầu vào</a>{% endif %}
-        {% if user.role == "teacher" %}<a href="/teacher/placement">Chấm bài</a>{% endif %}
+        {% if user.role == "teacher" %}<a href="/teacher/classes">Lớp</a>
+          <a href="/teacher/placement">Chấm placement</a>
+          <a href="/teacher/writing">Chấm bài viết</a>{% endif %}
         <span class="who">{{ user.full_name or user.email }} · {{ role_label(user.role) }}</span>
         <form method="post" action="/auth/logout" class="inline">
           <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">

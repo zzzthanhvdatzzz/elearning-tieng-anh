@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Báo cáo{% endblock %}
+{% block content %}
+<h1>{{ report.student.full_name or report.student.email }}</h1>
+<p class="muted">
+  {{ role_label(report.student.role) }} · trình độ {{ report.student.cefr_level or "chưa xếp" }} ·
+  tổng {{ report.minutes }} phút học
+</p>
+
+<div class="card">
+  <h2>Điểm theo kỹ năng</h2>
+  {% if report.skills %}
+    <table class="table">
+      <thead><tr><th>Kỹ năng</th><th>Điểm trung bình</th><th>Số bài</th></tr></thead>
+      <tbody>
+        {% for s in report.skills %}
+          <tr>
+            <td>{{ s.label }}</td>
+            <td>{% if s.weak %}<span class="wrong">{{ s.avg }}</span>{% else %}{{ s.avg }}{% endif %}</td>
+            <td>{{ s.count }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if report.weakest %}
+      <p class="explain">Kỹ năng yếu nhất: <b>{{ report.weakest.label }}</b> ({{ report.weakest.avg }}/10)
+        — đây là căn cứ để gợi ý bài tiếp theo (F5).</p>
+    {% endif %}
+  {% else %}
+    <p class="muted">Chưa có bài nào được chấm.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Thời gian học theo tuần</h2>
+  <div class="bars">
+    {% for w in report.weekly %}
+      <div class="bar-item">
+        <div class="bar" style="height:{{ [w.minutes * 2, 4] | max }}px"></div>
+        <span>{{ w.minutes }}'</span>
+      </div>
+    {% endfor %}
+  </div>
+  <p class="muted">Cột cao nhất tương ứng số phút nhiều nhất trong 6 tuần gần đây.</p>
+</div>
+
+<div class="card">
+  <h2>Bài đã nộp gần đây</h2>
+  {% if report.submissions %}
+    <table class="table">
+      <thead><tr><th>Bài</th><th>Điểm</th><th>Trạng thái</th><th>Nộp lúc</th></tr></thead>
+      <tbody>
+        {% for r in report.submissions %}
+          <tr>
+            <td>{{ r.assignment.title }}</td>
+            <td>{{ r.submission.final_score if r.submission.final_score is not none else "—" }}</td>
+            <td>{{ {"graded": "đã chấm", "awaiting_teacher": "chờ chấm", "auto_scored": "đã chấm tự động"}.get(r.submission.status, r.submission.status) }}</td>
+            <td>{{ r.submission.submitted_at.strftime("%d/%m %H:%M") }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">Chưa nộp bài nào.</p>
+  {% endif %}
+</div>
+{% endblock %}

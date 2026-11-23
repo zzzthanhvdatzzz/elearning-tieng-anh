@@ -51,7 +51,10 @@ dung bài viết / đường dẫn audio**. Đã thêm `text_content`, `audio_pa
   hiện đáp án đúng + giải thích từng câu, lịch sử các lượt, BR7 chặn lượt thứ 4 **ở server**
   (gọi thẳng API vẫn 409), tái dùng `grade_mcq`/`auto_score` nên công thức vẫn chỉ một chỗ.
   Chạy thật: 10.0 → 7.0 (sai 3 câu) → 10.0 → lượt 4 = 409.
-- ⬜ D5 luyện viết, nháp tự lưu 10 giây, đếm từ (F8).
+- ✅ D5 + D7: `services/writing.py`, `services/grading.py`, `routers/writing.py` — nháp tự lưu
+  `localStorage` 10 giây, đếm từ, chặn bài < 20 từ; giáo viên chấm 4 tiêu chí × 0–2,5,
+  bắt buộc nhận xét khi < 5,0, chấm lại bị từ chối, học sinh thấy điểm + nhận xét ngay.
+  Chạy thật: 8.5/10 → hiện với học sinh.
 - ⬜ D4 ghi âm MediaRecorder (**phải chạy HTTPS, kể cả localhost** — rủi ro R2);
   phương án dự phòng: tải file lên.
 - D7 rubric 4 tiêu chí × 0–2,5; BR6 điểm cuối = 0,7 × tự động + 0,3 × giáo viên;
@@ -59,10 +62,17 @@ dung bài viết / đường dẫn audio**. Đã thêm `text_content`, `audio_pa
 
 ## Tuần 5 — Sprint 3 (M4b): lớp, báo cáo, import
 
-- E1/E2 lớp, ghi danh, giao bài (deadline múi giờ VN, `max_attempts`).
-- E3/E4 báo cáo tính lại mỗi lần xem (quyết định ở Bảng 3.12), email tuần thứ Hai.
-- E5/E6 liên kết phụ huynh + import Excel (bỏ dòng lỗi, báo số dòng).
-- F3 Docker + Nginx + Uvicorn.
+- ✅ E1/E2: `services/classes.py`, `services/assignments.py`, `routers/teacher.py` — tạo lớp sinh mã
+  6 ký tự, thêm/xoá học sinh, BR2 chặn một em ở hai lớp, giao bài có deadline (chặn hạn quá khứ),
+  số lần làm, trang "Bài được giao" cho học sinh. Chạy thật: lớp `OR41X0` → giao bài → học sinh
+  tự đăng ký bằng mã → thấy bài "0/2".
+- ✅ E3/E4 (một phần): `services/report.py`, `routers/report.py` — điểm theo kỹ năng, kỹ năng yếu
+  nhất, phút học, biểu đồ 6 tuần, lịch sử nộp; báo cáo lớp có danh sách "cần can thiệp" và
+  xuất CSV (đường dẫn `/reports/class/{id}/export.csv` — dạng `.csv` cũ trả 422 vì xung đột
+  route với `{class_id}: int`).
+- ⬜ Email báo cáo tuần cho phụ huynh (job APScheduler thứ Hai) + luồng duyệt `parent_links`.
+- ⬜ E5/E6 liên kết phụ huynh + import Excel.
+- ⬜ F3 Docker + Nginx + Uvicorn.
 
 ## Tuần 6 — UAT và bàn giao (M5)
 

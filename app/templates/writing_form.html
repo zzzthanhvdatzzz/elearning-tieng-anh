@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Luyện viết — {{ lesson.title }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/lessons/{{ lesson.id }}">← Về bài học</a></p>
+<h1>Luyện viết: {{ lesson.title }}</h1>
+<p class="muted">Lượt {{ attempts_used + 1 }}/{{ assignment.max_attempts }} · còn {{ attempts_left }} lượt</p>
+
+<div class="card">
+  <h2>Đề bài</h2>
+  <p class="prompt">{{ prompt }}</p>
+  <p class="muted">Tối thiểu {{ min_words }} từ. Bài tự lưu nháp trên máy này mỗi 10 giây.</p>
+</div>
+
+<form method="post" action="/writing/{{ lesson.id }}/submit" class="card form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+  <textarea name="text" id="draft" rows="12" class="essay"
+            placeholder="Write your paragraph here...">{{ last.text_content if last and last.status != 'graded' else '' }}</textarea>
+  <p class="muted">Số từ: <span id="wc">0</span>
+    <span id="warn" class="wrong" hidden> (dưới {{ min_words }} từ, giáo viên sẽ nhắc)</span></p>
+  <button type="submit">Nộp bài</button>
+</form>
+
+<script>
+(() => {
+  const ta = document.getElementById('draft');
+  const wc = document.getElementById('wc');
+  const warn = document.getElementById('warn');
+  const KEY = 'draft-writing-{{ lesson.id }}';
+
+  const saved = localStorage.getItem(KEY);
+  if (saved && !ta.value) ta.value = saved;
+
+  function count() {
+    const n = ta.value.trim() ? ta.value.trim().split(/\s+/).length : 0;
+    wc.textContent = n;
+    warn.hidden = n >= {{ min_words }};
+    return n;
+  }
+  count();
+  ta.addEventListener('input', count);
+  setInterval(() => localStorage.setItem(KEY, ta.value), 10000);  // AC8.1: tự lưu 10 giây
+  window.addEventListener('pagehide', () => localStorage.setItem(KEY, ta.value));
+  ta.form.addEventListener('submit', () => localStorage.removeItem(KEY));
+})();
+</script>
+{% endblock %}

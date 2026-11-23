@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Bài viết của tôi{% endblock %}
+{% block content %}
+<p class="muted"><a href="/lessons/{{ lesson.id }}">← Về bài học</a></p>
+<h1>Bài viết của tôi</h1>
+
+{% if submission %}
+  <div class="card">
+    <p class="muted">Lượt {{ submission.attempt_no }} · nộp {{ submission.submitted_at.strftime("%d/%m/%Y %H:%M") }}</p>
+    <blockquote class="essay-view">{{ submission.text_content }}</blockquote>
+  </div>
+
+  {% if submission.status == "graded" %}
+    <div class="card score-card">
+      <p class="score">{{ submission.final_score }}<span>/10</span></p>
+      <p class="muted">Điểm do giáo viên chấm theo 4 tiêu chí</p>
+    </div>
+    <div class="card">
+      <h2>Nhận xét của giáo viên</h2>
+      <table class="table">
+        <thead><tr><th>Tiêu chí</th><th>Điểm (0–2,5)</th></tr></thead>
+        <tbody>
+          {% for c in criteria %}
+            {% if rubric.get(c) is not none %}
+              <tr><td>{{ labels[c] }}</td><td>{{ rubric[c] }}</td></tr>
+            {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if feedback %}<p class="explain">{{ feedback }}</p>{% endif %}
+    </div>
+  {% else %}
+    <div class="card">
+      <p><strong>Đang chờ giáo viên chấm.</strong></p>
+      <p class="muted">Bạn sẽ thấy điểm và nhận xét ngay khi giáo viên trả bài.</p>
+    </div>
+  {% endif %}
+
+  {% if attempts_left > 0 and submission.status != "graded" %}
+    <p><a class="btn" href="/writing/{{ lesson.id }}">Sửa và nộp lại (còn {{ attempts_left }} lượt)</a></p>
+  {% endif %}
+{% else %}
+  <div class="card"><p>Bạn chưa nộp bài viết cho bài này.</p>
+    <p><a class="btn" href="/writing/{{ lesson.id }}">Viết bài</a></p></div>
+{% endif %}
+{% endblock %}

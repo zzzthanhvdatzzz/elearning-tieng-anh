@@ -29,6 +29,17 @@ def units(request: Request, user: User = Depends(role_required("student")),
     )
 
 
+@router.get("/assignments", response_class=HTMLResponse)
+def student_assignments(request: Request, user: User = Depends(role_required("student")),
+                        db: OrmSession = Depends(get_db)):
+    from app.services import assignments as asg_svc
+
+    return templates.TemplateResponse(
+        request, "student_assignments.html",
+        {"user": user, "title": "Bài được giao", "todo": asg_svc.student_todo(db, user)},
+    )
+
+
 @router.get("/lessons/{lesson_id}", response_class=HTMLResponse)
 def lesson_page(request: Request, lesson_id: int,
                 user: User = Depends(role_required("student")),

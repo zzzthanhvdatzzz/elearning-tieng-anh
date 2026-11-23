@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Báo cáo lớp{% endblock %}
+{% block content %}
+<p class="muted"><a href="/teacher/classes/{{ report.klass.id }}">← Về lớp</a></p>
+<h1>Báo cáo lớp {{ report.klass.name }}</h1>
+<p>{{ report.students }} học sinh · điểm trung bình lớp
+  <b>{{ report.class_avg if report.class_avg is not none else "—" }}</b> / 10 ·
+  <a href="/reports/class/{{ report.klass.id }}/export.csv">Xuất CSV</a></p>
+
+{% if report.needs_help %}
+  <div class="card">
+    <h2>Cần can thiệp ({{ report.needs_help|length }})</h2>
+    <p class="muted">Học sinh có điểm trung bình dưới {{ 5.0 }}/10 — danh sách này dùng ở buổi họp tổ bộ môn.</p>
+    <ul>
+      {% for r in report.needs_help %}
+        <li><a href="/reports/student/{{ r.student.id }}">{{ r.student.full_name or r.student.email }}</a>
+          — {{ r.avg }}/10 sau {{ r.attempts }} bài</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<div class="card">
+  <h2>Bảng tổng hợp</h2>
+  {% if report.rows %}
+    <table class="table">
+      <thead><tr><th>Học sinh</th><th>CEFR</th><th>Bài đã nộp</th><th>Điểm TB</th><th>Phút học</th></tr></thead>
+      <tbody>
+        {% for r in report.rows %}
+          <tr>
+            <td><a href="/reports/student/{{ r.student.id }}">{{ r.student.full_name or r.student.email }}</a></td>
+            <td>{{ r.student.cefr_level or "—" }}</td>
+            <td>{{ r.attempts }}</td>
+            <td>{% if r.needs_help %}<span class="wrong">{{ r.avg }}</span>{% else %}{{ r.avg if r.avg is not none else "—" }}{% endif %}</td>
+            <td>{{ r.minutes }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">Lớp chưa có học sinh.</p>
+  {% endif %}
+</div>
+{% endblock %}

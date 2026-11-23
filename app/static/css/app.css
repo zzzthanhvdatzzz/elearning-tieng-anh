@@ -70,5 +70,10 @@ select { width:100%; padding:.55rem; border:1px solid var(--line); border-radius
 .wrong { color:var(--red); font-weight:600; }
 .explain { font-size:.92rem; color:var(--muted); background:#f7f9fc;
   padding:.4rem .6rem; border-radius:6px; }
+/* Báo cáo */
+.bars { display:flex; gap:.6rem; align-items:flex-end; min-height:130px; margin:.8rem 0; }
+.bar-item { flex:1; text-align:center; font-size:.78rem; color:var(--muted); }
+.bar { background:var(--blue); border-radius:4px 4px 0 0; width:100%; }
+.overdue td { background:#fff6f5; }
 .foot { text-align:center; color:var(--muted); font-size:.85rem; padding:2rem 1rem; }
 @media (max-width:360px) { .container { padding:1rem .75rem; } .topbar { padding:.5rem .75rem; } }
