@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
 from app.models import Assignment, RubricScore, Submission, User
-from app.services.scoring import final_score, rubric_total
+from app.services.scoring import final_score, rubric_total, with_late_penalty
 
 RUBRIC_CRITERIA = ["task", "grammar", "vocab", "coherence"]
 RUBRIC_LABELS = {
@@ -65,8 +65,12 @@ def grade_writing(
         ))
 
     assignment = db.get(Assignment, submission.assignment_id)
+    raw_final = final_for(assignment, submission.auto_score, teacher_total) if assignment else teacher_total
+    # BR8: nộp muộn trừ 10%/ngày, tối đa 3 ngày; quá 3 ngày nhận 0.
+    if raw_final is not None and submission.late_days:
+        raw_final = with_late_penalty(raw_final, submission.late_days)
     submission.teacher_score = teacher_total
-    submission.final_score = final_for(assignment, submission.auto_score, teacher_total) if assignment else teacher_total
+    submission.final_score = raw_final
     submission.status = "graded"
     submission.graded_by = teacher.id
     submission.graded_at = datetime.utcnow()

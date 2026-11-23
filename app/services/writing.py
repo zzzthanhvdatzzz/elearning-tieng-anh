@@ -26,7 +26,7 @@ def ensure_writing_assignment(db: OrmSession, klass, lesson) -> Assignment:
             Assignment.class_id == klass.id,
             Assignment.kind == "writing",
             Assignment.lesson_id == lesson.id,
-        )
+        ).order_by(Assignment.created_at.desc())
     ).scalars().first()
     if assignment is not None:
         return assignment

@@ -66,6 +66,34 @@ def ensure_practice_assignment(db: OrmSession, klass, lesson, questions: list[Qu
     return assignment
 
 
+def assigned_practice(db: OrmSession, klass, lesson) -> Assignment | None:
+    """Bài giao THẬT của giáo viên cho lớp+bài này (nếu có).
+
+    Trước đây học sinh luôn làm trên assignment "tự sinh" theo bài học, nên hạn nộp và số lượt
+    giáo viên đặt không được áp dụng. Hàm này để luồng làm bài dùng đúng bài giao.
+
+    Khi có NHIỀU bài giao cho cùng một bài học, chọn bài còn hạn trước (theo id mới nhất);
+    chỉ khi tất cả đã quá hạn mới lấy bài mới nhất — tránh việc bài cũ còn hạn chế số lượt
+    của bài mới.
+    """
+    from datetime import datetime
+
+    rows = list(
+        db.execute(
+            select(Assignment).where(
+                Assignment.class_id == klass.id,
+                Assignment.kind == "practice",
+                Assignment.lesson_id == lesson.id,
+            ).order_by(Assignment.id.desc())
+        ).scalars()
+    )
+    now = datetime.utcnow()
+    for a in rows:
+        if a.deadline is None or a.deadline >= now:
+            return a
+    return rows[0] if rows else None
+
+
 def practice_state(db: OrmSession, student: User, lesson_id: int) -> dict | None:
     """Trả None nếu bài không thuộc khối lớp của học sinh (chặn IDOR)."""
     detail = lesson_detail(db, student, lesson_id)
@@ -77,7 +105,9 @@ def practice_state(db: OrmSession, student: User, lesson_id: int) -> dict | None
     if klass is None or not questions:
         return None
 
-    assignment = ensure_practice_assignment(db, klass, lesson, questions)
+    assignment = assigned_practice(db, klass, lesson) or ensure_practice_assignment(
+        db, klass, lesson, questions
+    )
     used = db.execute(
         select(func.count()).select_from(Submission).where(
             Submission.assignment_id == assignment.id, Submission.student_id == student.id
