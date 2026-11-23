@@ -31,8 +31,8 @@ from app.services.security import (
 
 router = APIRouter(prefix="/api", tags=["api"])
 
-ROLE_HOME = {"student": "/units", "teacher": "/teacher/classes", "parent": "/parent",
-             "admin": "/admin/users"}
+ROLE_HOME = {"student": "/dashboard", "teacher": "/dashboard", "parent": "/dashboard",
+             "admin": "/dashboard"}
 
 
 def api_user(request: Request, db: OrmSession = Depends(get_db)) -> User:
@@ -92,6 +92,25 @@ def api_register(payload: dict = Body(...), db: OrmSession = Depends(get_db)):
     db.add(Enrollment(class_id=klass.id, student_id=user.id))
     db.commit()
     return _session_response(user, create_session(db, user))
+
+
+@router.post("/auth/register-parent")
+def api_register_parent(payload: dict = Body(...), db: OrmSession = Depends(get_db)):
+    """Phụ huynh tự đăng ký (không cần mã lớp); liên kết với con phải chờ giáo viên duyệt."""
+    email = str(payload.get("email", "")).strip().lower()
+    password = str(payload.get("password", ""))
+    full_name = str(payload.get("full_name", "")).strip()
+    if db.execute(select(User).where(User.email == email)).scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Email này đã được đăng ký")
+    if len(password) < 8:
+        raise HTTPException(status_code=422, detail="Mật khẩu phải có ít nhất 8 ký tự")
+
+    parent = User(email=email, password_hash=hash_password(password),
+                  full_name=full_name, role="parent")
+    db.add(parent)
+    db.commit()
+    db.refresh(parent)
+    return _session_response(parent, create_session(db, parent))
 
 
 @router.post("/auth/logout")

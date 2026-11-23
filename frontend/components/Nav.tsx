@@ -26,6 +26,7 @@ export default function Nav() {
       <nav>
         {me ? (
           <>
+            <Link href="/dashboard">Tổng quan</Link>
             {me.role === "student" && (
               <>
                 <Link href="/units">Lộ trình</Link>

@@ -12,6 +12,11 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# Chạy `python scripts/run_https.py` thì sys.path chỉ có thư mục scripts/ →
+# phải thêm gốc repo vào trước khi uvicorn import "app.main:app".
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 CERT_DIR = ROOT / "data" / "certs"
 CERT = CERT_DIR / "local.crt"
 KEY = CERT_DIR / "local.key"

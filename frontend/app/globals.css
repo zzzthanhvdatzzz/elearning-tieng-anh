@@ -59,3 +59,14 @@ button.link { background: none; border: 0; color: var(--blue); cursor: pointer; 
 .review.bad { border-left: 3px solid var(--red); padding-left: .7rem; }
 .foot { text-align: center; color: var(--muted); font-size: .85rem; padding: 2rem 1rem; }
 @media (max-width: 360px) { .container { padding: 1rem .75rem; } .topbar { padding: .5rem .75rem; } }
+/* Trang tổng quan */
+.hero { padding: .4rem 0 1rem; }
+.hero h1 { margin: .2rem 0; }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.stat-card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: .9rem; }
+.stat-value { font-size: 1.7rem; font-weight: 800; color: var(--blue); line-height: 1.1; }
+.stat-label { font-size: .85rem; color: var(--muted); }
+.grid-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; margin: 1rem 0; }
+.card.action { display: flex; flex-direction: column; gap: .25rem; margin: 0; text-decoration: none; color: var(--ink); }
+.card.action:hover { border-color: var(--blue); }
+.card.action strong { color: var(--blue); }

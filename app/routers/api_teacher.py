@@ -59,6 +59,22 @@ def decide_parent(link_id: int, payload: dict = Body(...),
     return {"ok": True}
 
 
+@router.post("/teacher/classes")
+def create_class(payload: dict = Body(...), user: User = Depends(teacher_only),
+                 db: OrmSession = Depends(get_db)):
+    name = str(payload.get("name", "")).strip()
+    try:
+        grade = int(payload.get("grade", 8))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="Khối lớp không hợp lệ")
+    if not name:
+        raise HTTPException(status_code=422, detail="Cần đặt tên lớp")
+    if grade not in (8, 10):
+        raise HTTPException(status_code=422, detail="Bản MVP chỉ hỗ trợ khối 8 và khối 10")
+    klass = cls_svc.create_class(db, user, name, grade)
+    return {"ok": True, "id": klass.id, "join_code": klass.join_code}
+
+
 @router.get("/teacher/classes/{class_id}")
 def class_detail(class_id: int, user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
     from app.services import assignments as asg_svc
