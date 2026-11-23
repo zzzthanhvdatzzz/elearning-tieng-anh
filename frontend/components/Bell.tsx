@@ -16,6 +16,32 @@ export default function Bell({ unread }: { unread: number }) {
   useEffect(() => setCount(unread), [unread]);
   useEffect(() => setOpen(false), [pathname]);
 
+  // Chuông tự cập nhật mỗi 30 giây và khi quay lại tab — để học sinh đang mở trang
+  // vẫn thấy thông báo mới khi giáo viên vừa chấm bài, không phải F5.
+  useEffect(() => {
+    let alive = true;
+    async function refresh() {
+      if (document.visibilityState === "hidden") return;
+      try {
+        const data = await api<{ unread: number; items: Item[] }>("/api/notifications");
+        if (!alive) return;
+        setCount(data.unread);
+        if (open) setItems(data.items);
+      } catch {
+        /* im lặng */
+      }
+    }
+    const timer = setInterval(refresh, 30000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [open]);
+
   async function toggle() {
     const next = !open;
     setOpen(next);
