@@ -168,7 +168,7 @@ a.btn { color: #fff; }
 }
 .table td { font-size: 1.02rem; color: #05080d; font-weight: 500; }
 .table tbody tr:last-child td { border-bottom: 0; }
-.table tbody tr:hover td { background: #fafbff; }
+.table tbody tr:hover td { background: transparent; }
 .overdue td { background: #fff7f6; }
 
 /* ---------------------------------------------------------------- dashboard pieces */
@@ -210,8 +210,8 @@ a.btn { color: #fff; }
 }
 .lesson-list li:last-child { border-bottom: 0; }
 .skill {
-  font-size: .72rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
-  background: var(--blue-soft); color: var(--blue-dark);
+  font-size: .85rem; font-weight: 700; letter-spacing: .01em; text-transform: none;
+  background: var(--blue-soft); color: #17398f;
   border-radius: 999px; padding: .15rem .55rem;
 }
 .transcript, .essay-view, .reading { white-space: pre-line; }
@@ -405,7 +405,7 @@ a.btn { color: #fff; }
   }
   .topbar { background: rgba(12, 20, 35, .82); }
   .table th { background: #0e1728; }
-  .table tbody tr:hover td { background: #131f33; }
+  .table tbody tr:hover td { background: transparent; }
   .overdue td { background: #2a1614; }
   .opt:hover { background: #16244096; border-color: #274067; }
   .transcript, .explain, .form input[type="file"] { background: #0e1828; }
