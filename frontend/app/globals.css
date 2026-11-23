@@ -2,11 +2,11 @@
    Nguyên tắc: chữ đọc được (≥15px cho nội dung), nút ≥44px, một hành động chính mỗi màn. */
 
 :root {
-  --ink: #101828;
-  --ink-2: #344054;
-  --muted: #667085;
-  --line: #e4e7ec;
-  --line-2: #f0f2f5;
+  --ink: #0d1522;
+  --ink-2: #1d2939;
+  --muted: #475467;
+  --line: #dfe3ea;
+  --line-2: #eef1f5;
 
   --blue: #2f6bff;
   --blue-dark: #1f4fd8;
@@ -114,7 +114,7 @@ button.link:hover { color: var(--red); background: var(--red-soft); }
 .hero .muted, .hero p { color: rgba(255, 255, 255, .88); margin: 0; font-size: .98rem; }
 
 /* ---------------------------------------------------------------- form */
-.form label { display: block; margin: .8rem 0; font-size: .95rem; color: var(--ink-2); }
+.form label { display: block; margin: .8rem 0; font-size: .97rem; color: var(--ink-2); font-weight: 500; }
 .form input, .form select, .form textarea {
   width: 100%; margin-top: .35rem; padding: .7rem .8rem;
   border: 1px solid var(--line); border-radius: var(--radius-sm);
@@ -149,7 +149,7 @@ a.btn { color: #fff; }
   font-size: .95rem; border: 1px solid transparent;
 }
 .alert-error { background: var(--red-soft); color: #912018; border-color: #f5c6c2; }
-.muted { color: var(--muted); font-size: .92rem; }
+.muted { color: var(--muted); font-size: .95rem; }
 .done { color: var(--green); font-weight: 600; }
 .wrong { color: var(--red); font-weight: 600; }
 
@@ -161,9 +161,10 @@ a.btn { color: #fff; }
 }
 .table th, .table td { padding: .7rem .85rem; text-align: left; border-bottom: 1px solid var(--line-2); }
 .table th {
-  background: #f8fafc; font-size: .82rem; text-transform: uppercase;
-  letter-spacing: .04em; color: var(--muted); font-weight: 700;
+  background: #f4f7fb; font-size: .9rem; letter-spacing: .01em;
+  color: var(--ink-2); font-weight: 700;
 }
+.table td { font-size: 1rem; color: var(--ink); }
 .table tbody tr:last-child td { border-bottom: 0; }
 .table tbody tr:hover td { background: #fafbff; }
 .overdue td { background: #fff7f6; }
@@ -312,11 +313,11 @@ a.btn { color: #fff; }
 /* ---------------------------------------------------------------- chế độ tối */
 @media (prefers-color-scheme: dark) {
   :root {
-    --ink: #e8eefb;
-    --ink-2: #c2cddf;
-    --muted: #93a1b8;
-    --line: #223047;
-    --line-2: #1a2537;
+    --ink: #f2f6fc;
+    --ink-2: #dbe3ef;
+    --muted: #b7c3d6;
+    --line: #2a3a53;
+    --line-2: #1e2a3d;
 
     --blue: #6b95ff;
     --blue-dark: #93b4ff;

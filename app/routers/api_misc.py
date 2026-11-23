@@ -112,6 +112,38 @@ def parent_report(student_id: int, user: User = Depends(role_only("parent")),
     }
 
 
+@router.get("/reports/student/{student_id}")
+def student_report(student_id: int, user: User = Depends(api_user),
+                   db: OrmSession = Depends(get_db)):
+    """Học sinh xem báo cáo của mình; giáo viên xem học sinh lớp mình; quản trị chỉ đọc."""
+    allowed = user.id == student_id
+    if not allowed and user.role == "teacher":
+        from app.models import Class, Enrollment
+
+        allowed = db.query(Enrollment).join(Class, Class.id == Enrollment.class_id).filter(
+            Enrollment.student_id == student_id, Class.teacher_id == user.id
+        ).first() is not None
+    if not allowed and user.role == "admin":
+        allowed = True
+    if not allowed:
+        raise HTTPException(status_code=403, detail="Bạn chỉ được xem dữ liệu của mình")
+
+    student = db.get(User, student_id)
+    if student is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy học sinh")
+    r = report_svc.student_report(db, student)
+    return {
+        "student": {"id": student.id, "name": student.full_name or student.email,
+                    "cefr": student.cefr_level},
+        "minutes": r["minutes"], "skills": r["skills"], "weakest": r["weakest"],
+        "weekly": r["weekly"],
+        "recent": [{"title": x["assignment"].title, "score": x["submission"].final_score,
+                    "status": x["submission"].status,
+                    "at": x["submission"].submitted_at.strftime("%d/%m %H:%M")}
+                   for x in r["submissions"]],
+    }
+
+
 # ------------------------------------------------------------------ quản trị
 
 

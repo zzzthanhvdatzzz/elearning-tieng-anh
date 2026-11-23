@@ -37,6 +37,7 @@ export default function Nav() {
               <>
                 <Link className={cls("/units")} href="/units">Lộ trình</Link>
                 <Link className={cls("/assignments")} href="/assignments">Bài được giao</Link>
+                <Link className={cls(`/reports/student/${me.id}`)} href={`/reports/student/${me.id}`}>Báo cáo</Link>
               </>
             )}
             {me.role === "teacher" && (
