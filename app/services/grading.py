@@ -74,6 +74,13 @@ def grade_writing(
     submission.status = "graded"
     submission.graded_by = teacher.id
     submission.graded_at = datetime.utcnow()
+
+    # Thông báo cho học sinh biết bài đã được trả
+    from app.services import notify
+
+    notify.push(db, submission.student_id,
+                f"Bài đã được chấm: {assignment.title if assignment else 'bài tập'}",
+                f"Điểm cuối: {raw_final}/10. Mở mục bài viết để xem nhận xét của giáo viên.")
     db.commit()
     db.refresh(submission)
     return submission, None

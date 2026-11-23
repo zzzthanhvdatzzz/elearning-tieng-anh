@@ -85,6 +85,14 @@ def decide(db: OrmSession, teacher: User, link_id: int, approve: bool) -> tuple[
     link.status = "approved" if approve else "rejected"
     link.approved_by = teacher.id
     db.commit()
+
+    from app.services import notify
+
+    notify.push(db, link.parent_id,
+                "Liên kết với con đã được duyệt" if approve else "Yêu cầu liên kết bị từ chối",
+                "Bạn có thể xem báo cáo của con." if approve
+                else "Hãy kiểm tra lại email học sinh và gửi yêu cầu mới.")
+    db.commit()
     return True, None
 
 

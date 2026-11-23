@@ -148,13 +148,23 @@ def student_report(student_id: int, user: User = Depends(api_user),
 
 
 @router.get("/admin/users")
-def admin_users(role: str = "", q: str = "", user: User = Depends(role_only("admin")),
-                db: OrmSession = Depends(get_db)):
-    return {"items": [
-        {"id": u.id, "email": u.email, "full_name": u.full_name, "role": u.role,
-         "active": u.is_active}
-        for u in admin_svc.list_users(db, role or None, q)
-    ], "roles": list(admin_svc.ROLES)}
+def admin_users(role: str = "", q: str = "", page: int = 1, size: int = 20,
+                user: User = Depends(role_only("admin")), db: OrmSession = Depends(get_db)):
+    all_rows = admin_svc.list_users(db, role or None, q)
+    size = max(5, min(100, size))
+    total = len(all_rows)
+    pages = max(1, (total + size - 1) // size)
+    page = max(1, min(page, pages))
+    start = (page - 1) * size
+    return {
+        "items": [
+            {"id": u.id, "email": u.email, "full_name": u.full_name, "role": u.role,
+             "active": u.is_active}
+            for u in all_rows[start:start + size]
+        ],
+        "total": total, "page": page, "pages": pages, "size": size,
+        "roles": list(admin_svc.ROLES),
+    }
 
 
 @router.post("/admin/users")

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, Me } from "@/lib/api";
+import Bell from "@/components/Bell";
 
 const ROLE_LABEL: Record<string, string> = {
   student: "Học sinh", teacher: "Giáo viên", parent: "Phụ huynh", admin: "Quản trị",
@@ -54,10 +55,12 @@ export default function Nav() {
                 <Link className={cls("/admin/import")} href="/admin/import">Import</Link>
               </>
             )}
+            <Link className={cls("/settings/password")} href="/settings/password">Mật khẩu</Link>
             <span className="who">
               <span className="avatar" aria-hidden>{initial}</span>
               {name} · {ROLE_LABEL[me.role] ?? me.role}
             </span>
+            <Bell unread={me.unread ?? 0} />
             <button type="button" className="link" onClick={logout}>Đăng xuất</button>
           </>
         ) : (

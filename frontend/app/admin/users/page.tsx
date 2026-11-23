@@ -17,19 +17,25 @@ export default function AdminUsersPage() {
   const [form, setForm] = useState({ email: "", full_name: "", role: "teacher", password: "" });
   const [error, setError] = useState("");
   const [flash, setFlash] = useState("");
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   async function load() {
     try {
-      const qs = new URLSearchParams({ role: filter.role, q: filter.q }).toString();
-      const d = await api<{ items: Row[]; roles: string[] }>(`/api/admin/users?${qs}`);
+      const qs = new URLSearchParams({ role: filter.role, q: filter.q, page: String(page) }).toString();
+      const d = await api<{ items: Row[]; roles: string[]; total: number; pages: number }>(`/api/admin/users?${qs}`);
       setRows(d.items);
       setRoles(d.roles);
+      setTotal(d.total);
+      setPages(d.pages);
     } catch (err) {
       if (err instanceof ApiError && (err.status === 401 || err.status === 403)) router.replace("/login");
       else setError("Lỗi tải danh sách tài khoản");
     }
   }
-  useEffect(() => { load(); }, [filter.role, filter.q]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [filter.role, filter.q, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setPage(1); }, [filter.role, filter.q]);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -104,6 +110,18 @@ export default function AdminUsersPage() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {rows && total > 0 && (
+        <div className="row-between" style={{ marginTop: ".8rem" }}>
+          <span className="muted">{total} tài khoản · trang {page}/{pages}</span>
+          <span style={{ display: "flex", gap: ".5rem" }}>
+            <button type="button" className="btn ghost sm" disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}>← Trước</button>
+            <button type="button" className="btn ghost sm" disabled={page >= pages}
+                    onClick={() => setPage((p) => Math.min(pages, p + 1))}>Sau →</button>
+          </span>
+        </div>
       )}
     </>
   );

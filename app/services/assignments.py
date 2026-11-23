@@ -63,6 +63,19 @@ def create_assignment(
     if lesson is not None:
         for i, q in enumerate(lesson.questions, start=1):
             db.add(AssignmentQuestion(assignment_id=assignment.id, question_id=q.id, order_no=i))
+
+    # Thông báo cho học sinh trong lớp (F11: học sinh nhận thông báo)
+    from app.services import notify
+
+    student_ids = [
+        row.student_id for row in db.execute(
+            select(Enrollment).where(Enrollment.class_id == klass.id,
+                                     Enrollment.status == "active")
+        ).scalars()
+    ]
+    hạn = deadline.strftime("%d/%m/%Y %H:%M") if deadline else "không có hạn"
+    notify.push_many(db, student_ids, f"Bài mới: {title.strip()[:120]}",
+                     f"Hạn nộp: {hạn}. Số lần làm: {max_attempts}.")
     db.commit()
     db.refresh(assignment)
     return assignment, None

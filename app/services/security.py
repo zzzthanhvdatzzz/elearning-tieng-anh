@@ -80,3 +80,32 @@ def revoke_all_sessions(db: OrmSession, user_id: int) -> int:
         db.delete(row)
     db.commit()
     return len(rows)
+
+
+MIN_PASSWORD_LEN = 8
+
+
+def change_password(db: OrmSession, user: User, old_password: str, new_password: str,
+                    keep_token: str | None = None) -> tuple[bool, str | None]:
+    """Người dùng tự đổi mật khẩu.
+
+    Trả (False, mã_lỗi) khi: mật khẩu cũ sai, mật khẩu mới quá ngắn, hoặc trùng mật khẩu cũ.
+    Đổi xong thì các phiên KHÁC bị huỷ (giữ phiên đang thao tác) — nếu tài khoản bị lộ,
+    kẻ khác đang đăng nhập sẽ bị đẩy ra ngay.
+    """
+    if not verify_password(old_password, user.password_hash):
+        return False, "wrong_old"
+    if len(new_password or "") < MIN_PASSWORD_LEN:
+        return False, "too_short"
+    if new_password == old_password:
+        return False, "same"
+    user.password_hash = hash_password(new_password)
+    db.commit()
+
+    rows = db.execute(select(LoginSession).where(LoginSession.user_id == user.id)).scalars().all()
+    for row in rows:
+        if keep_token and row.token == keep_token:
+            continue
+        db.delete(row)
+    db.commit()
+    return True, None

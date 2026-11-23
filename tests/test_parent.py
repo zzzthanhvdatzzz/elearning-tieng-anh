@@ -116,4 +116,7 @@ def test_job_bao_cao_tuan_idempotent_va_sinh_file_eml(student, db, anon_client, 
     second = weekly_email.run_weekly(send=False)
     assert second["created"] == 0 and second["skipped"] == 1
     assert len(list(Path(first["out_dir"]).glob("*.eml"))) == 1
-    assert len(db.execute(select(Notification)).scalars().all()) == 1
+    # Chỉ đếm thông báo của job tuần (việc duyệt phụ huynh cũng sinh 1 thông báo riêng)
+    job_notes = [n for n in db.execute(select(Notification)).scalars()
+                 if "báo cáo tuần" in n.title.lower()]
+    assert len(job_notes) == 1

@@ -122,8 +122,10 @@ def api_logout(request: Request, db: OrmSession = Depends(get_db)):
 
 
 @router.get("/me")
-def api_me(user: User = Depends(api_user)):
-    return _user_json(user)
+def api_me(user: User = Depends(api_user), db: OrmSession = Depends(get_db)):
+    from app.services import notify
+
+    return {**_user_json(user), "unread": notify.unread_count(db, user.id)}
 
 
 # ------------------------------------------------------------------ học sinh
