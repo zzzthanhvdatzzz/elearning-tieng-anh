@@ -59,6 +59,94 @@ def decide_parent(link_id: int, payload: dict = Body(...),
     return {"ok": True}
 
 
+@router.get("/teacher/classes/{class_id}")
+def class_detail(class_id: int, user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
+    from app.services import assignments as asg_svc
+
+    klass = cls_svc.owned_class(db, user, class_id)
+    if klass is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp")
+    assignments = db.execute(
+        select(Assignment).where(Assignment.class_id == klass.id)
+        .order_by(Assignment.created_at.desc())
+    ).scalars().all()
+    return {
+        "klass": {"id": klass.id, "name": klass.name, "grade": klass.grade,
+                  "join_code": klass.join_code},
+        "roster": [{"id": r["student"].id, "name": r["student"].full_name or r["student"].email,
+                    "email": r["student"].email, "cefr": r["student"].cefr_level}
+                   for r in cls_svc.roster(db, klass)],
+        "lessons": [{"id": l.id, "code": l.code, "title": l.title}
+                    for l in asg_svc.lessons_for_class(db, klass)],
+        "assignments": [{"id": a.id, "title": a.title, "kind": a.kind,
+                         "deadline": a.deadline.isoformat() if a.deadline else None,
+                         "max_attempts": a.max_attempts} for a in assignments],
+    }
+
+
+@router.post("/teacher/classes/{class_id}/students")
+def add_student(class_id: int, payload: dict = Body(...),
+                user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
+    klass = cls_svc.owned_class(db, user, class_id)
+    if klass is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp")
+    _, error = cls_svc.add_student_by_email(db, klass, str(payload.get("email", "")))
+    if error:
+        raise HTTPException(status_code=422, detail=error)
+    return {"ok": True}
+
+
+@router.delete("/teacher/classes/{class_id}/students/{student_id}")
+def remove_student(class_id: int, student_id: int, user: User = Depends(teacher_only),
+                   db: OrmSession = Depends(get_db)):
+    klass = cls_svc.owned_class(db, user, class_id)
+    if klass is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp")
+    cls_svc.remove_student(db, klass, student_id)
+    return {"ok": True}
+
+
+@router.post("/teacher/classes/{class_id}/assignments")
+def create_assignment(class_id: int, payload: dict = Body(...),
+                      user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
+    from app.services import assignments as asg_svc
+    from app.models import Lesson
+
+    klass = cls_svc.owned_class(db, user, class_id)
+    if klass is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp")
+    lesson = db.get(Lesson, int(payload["lesson_id"])) if payload.get("lesson_id") else None
+    deadline = asg_svc.parse_deadline(payload.get("deadline") or None)
+    if payload.get("deadline") and deadline is None:
+        raise HTTPException(status_code=422, detail="Hạn nộp không đúng định dạng")
+    _, error = asg_svc.create_assignment(
+        db, user, klass, lesson, str(payload.get("title", "")), deadline,
+        int(payload.get("max_attempts", 1)), str(payload.get("kind", "practice")),
+    )
+    if error:
+        raise HTTPException(status_code=422, detail=error)
+    return {"ok": True}
+
+
+@router.get("/teacher/classes/{class_id}/report")
+def class_report(class_id: int, user: User = Depends(teacher_only),
+                 db: OrmSession = Depends(get_db)):
+    from app.services import report as report_svc
+
+    klass = cls_svc.owned_class(db, user, class_id)
+    if klass is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp")
+    r = report_svc.class_report(db, klass)
+    return {
+        "klass": {"id": klass.id, "name": klass.name},
+        "students": r["students"], "class_avg": r["class_avg"],
+        "rows": [{"id": row["student"].id, "name": row["student"].full_name or row["student"].email,
+                  "attempts": row["attempts"], "avg": row["avg"],
+                  "minutes": row["minutes"], "needs_help": row["needs_help"]}
+                 for row in r["rows"]],
+    }
+
+
 @router.get("/teacher/classes")
 def teacher_classes(user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
     return {"items": [

@@ -28,6 +28,16 @@ cd frontend && npm install && npm run dev     # http://localhost:3000
 
 Cổng 8000 đang bị ứng dụng khác chiếm trên máy phát triển của nhóm, nên API dùng 8010.
 
+## 2b. Test ghi âm trên điện thoại (HTTPS tự ký)
+
+```bash
+.venv/bin/python scripts/run_https.py         # sinh cert + chạy https://0.0.0.0:8443
+```
+
+Script tự thêm IP LAN vào SAN của chứng chỉ. Trên điện thoại mở `https://<IP-LAN>:8443`,
+chọn "Vẫn tiếp tục" khi trình duyệt cảnh báo chứng chỉ tự ký — sau đó `MediaRecorder` mới chạy.
+Chứng chỉ nằm ở `data/certs/` (đã nằm trong `.gitignore`).
+
 ## 3. Nginx đứng trước (bắt buộc HTTPS nếu dùng ghi âm)
 
 ```nginx
