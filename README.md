@@ -20,6 +20,12 @@ Chạy test: `.venv/bin/python -m pytest -q` (75 test, ~3,5 phút vì mỗi test
 Nạp dữ liệu mẫu: `.venv/bin/python -m app.seed`
 → giáo viên `gv.an@truong.edu.vn` / `matkhau123`, mã lớp `8A1X21`, 25 câu kiểm tra đầu vào.
 
+Nạp nội dung 4 Unit / 24 bài / 240 câu: `.venv/bin/python -m app.content_pack`
+(ngân hàng từ vựng + ngữ pháp sinh tự động — nhóm Nội dung phải rà lại nghĩa trước khi dùng thật).
+
+Chạy cả hệ thống bằng Docker: `docker compose up -d --build` — xem `deploy.md`.
+Kịch bản kiểm thử và biên bản UAT: `docs/UAT.md`. Biểu mẫu câu hỏi: `data/templates/mau_cau_hoi.xlsx`.
+
 ## Vai trò và đường dẫn chính
 
 | Vai trò | Trang | Chức năng |

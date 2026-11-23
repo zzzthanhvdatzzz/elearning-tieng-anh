@@ -1,65 +1,82 @@
-# Triển khai (F3 — Docker + Nginx + Uvicorn)
+# Triển khai hệ thống (hai tiến trình: FastAPI + Next.js)
 
-## 1. Chạy bằng Docker (một lệnh)
-
-```bash
-docker build -t elearning-nhom05 .
-docker run -d --name elearning -p 8000:8000 \
-  -v "$PWD/data:/app/data" \
-  -e DATABASE_URL="sqlite:////app/data/app.db" \
-  elearning-nhom05
-```
-
-Nạp dữ liệu mẫu lần đầu (CSDL nằm trong volume):
+## 1. Cách nhanh nhất — Docker Compose
 
 ```bash
-docker exec -it elearning python -m app.seed
+docker compose up -d --build
+docker compose exec api python -m app.seed
+docker compose exec api python -m app.content_pack
 ```
 
-Kiểm tra: `curl http://127.0.0.1:8000/health` → `{"status":"ok","db":"ok"}`
+| Dịch vụ | Cổng máy host | Ghi chú |
+|---|---|---|
+| `web` (Next.js) | 3000 | giao diện chính cho học sinh/giáo viên/phụ huynh/quản trị |
+| `api` (FastAPI) | 8010 | API `/api/*`, giao diện HTML dự phòng, `/docs`, `/health` |
 
-## 2. Nginx đứng trước (bắt buộc HTTPS nếu dùng ghi âm)
+**Lưu ý bắt buộc:** `NEXT_PUBLIC_API_URL` được **nhúng vào bundle lúc build**, không đọc được lúc chạy.
+Đổi địa chỉ API thì phải build lại ảnh `web` (`docker compose build web`), sửa biến môi trường
+runtime không có tác dụng.
 
-`/etc/nginx/sites-available/elearning`:
+## 2. Chạy không dùng Docker (máy phát triển)
+
+```bash
+# cửa sổ 1
+.venv/bin/python -m uvicorn app.main:app --port 8010
+# cửa sổ 2
+cd frontend && npm install && npm run dev     # http://localhost:3000
+```
+
+Cổng 8000 đang bị ứng dụng khác chiếm trên máy phát triển của nhóm, nên API dùng 8010.
+
+## 3. Nginx đứng trước (bắt buộc HTTPS nếu dùng ghi âm)
 
 ```nginx
 server {
-    listen 80;
+    listen 443 ssl;
     server_name elearning.example.edu.vn;
 
-    client_max_body_size 12m;          # audio bài nói ≤ 10 MB (NFR7)
+    client_max_body_size 12m;            # audio bài nói ≤ 10 MB (NFR7)
 
-    location /static/ {
-        alias /app/app/static/;
-        expires 7d;
+    # Frontend Next.js
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
     }
 
-    location / {
-        proxy_pass http://127.0.0.1:8000;
+    # API FastAPI — giữ nguyên tiền tố /api để khớp CORS và cookie path
+    location /api/ {
+        proxy_pass http://127.0.0.1:8010;
         proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Giao diện HTML dự phòng + tài liệu API
+    location ~ ^/(auth|units|lessons|practice|writing|speaking|teacher|parent|admin|reports|audio|docs|health|static)/ {
+        proxy_pass http://127.0.0.1:8010;
+        proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
 ```
 
-Lấy chứng chỉ: `certbot --nginx -d elearning.example.edu.vn`.
+**Vì sao HTTPS là bắt buộc:** `MediaRecorder` chỉ chạy trong secure context. Trên `http://` — kể cả
+khi điện thoại truy cập qua LAN — trình duyệt chặn micro (`navigator.mediaDevices === undefined`).
+Đây là rủi ro R2; phương án dự phòng là tải file ghi âm lên, đã có sẵn trên giao diện.
 
-**Vì sao HTTPS là bắt buộc:** `MediaRecorder` (ghi âm bài nói, F7) chỉ chạy trong secure
-context. Trên `http://` — kể cả `http://localhost` trên điện thoại truy cập qua LAN —
-trình duyệt chặn micro và trả `navigator.mediaDevices === undefined`. Đây là rủi ro R2
-trong sổ rủi ro, đã có phương án dự phòng là tải file ghi âm lên.
+Nếu đặt cả hai sau một domain, CORS không còn cần thiết (cùng origin) — khi đó có thể bỏ
+`CORSMiddleware` trong `app/main.py`.
 
-## 3. Biến môi trường
+## 4. Biến môi trường
 
-| Tên | Bắt buộc | Ghi chú |
+| Tên | Dùng ở | Ghi chú |
 |---|---|---|
-| `DATABASE_URL` | không | mặc định `sqlite:///data/app.db`; đổi sang PostgreSQL khi nhiều lớp |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | không | chưa cấu hình thì báo cáo tuần chỉ ghi ra `data/out/weekly/*.eml` |
-| `EMAIL_OUT_DIR` | không | đổi thư mục xuất email |
-| `DISABLE_JOBS` | không | `1` để tắt thread báo cáo tuần (dùng khi test) |
+| `DATABASE_URL` | API | mặc định `sqlite:///data/app.db`; đổi sang PostgreSQL khi nhiều lớp |
+| `NEXT_PUBLIC_API_URL` | Web | **nhúng lúc build**; mặc định `http://localhost:8010` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | API | chưa cấu hình thì báo cáo tuần chỉ ghi `data/out/weekly/*.eml` |
+| `DISABLE_JOBS` | API | `1` để tắt job báo cáo tuần (dùng khi test) |
 
-## 4. Sao lưu (RPO 24 giờ, NFR7)
+## 5. Sao lưu (RPO 24 giờ — NFR7)
 
 ```bash
 # crontab -e
@@ -67,10 +84,13 @@ trong sổ rủi ro, đã có phương án dự phòng là tải file ghi âm l�
 0 3 * * 0 find /srv/backup -name 'app-*.db' -mtime +30 -delete
 ```
 
-## 5. Kiểm tra sau triển khai (dùng cho biên bản bàn giao)
+## 6. Checklist nghiệm thu (dán vào biên bản bàn giao)
 
 ```bash
-curl -s https://<domain>/health
-curl -s -o /dev/null -w '%{http_code}\n' https://<domain>/auth/login     # 200
-curl -s -o /dev/null -w '%{http_code}\n' https://<domain>/admin/users   # 303 (chưa đăng nhập)
+curl -s https://<domain>/health                        # {"status":"ok","db":"ok"}
+curl -s -o /dev/null -w '%{http_code}\n' https://<domain>/login        # 200
+curl -s https://<domain>/api/units -o /dev/null -w '%{http_code}\n'    # 401 (chưa đăng nhập)
+curl -s -X POST https://<domain>/api/auth/login -H 'Content-Type: application/json' \
+     -H 'X-Requested-With: fetch' -d '{"email":"gv.an@truong.edu.vn","password":"matkhau123"}' \
+     -o /dev/null -w '%{http_code}\n'                  # 200
 ```

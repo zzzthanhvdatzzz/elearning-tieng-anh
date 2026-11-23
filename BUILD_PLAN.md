@@ -85,9 +85,12 @@ dung bài viết / đường dẫn audio**. Đã thêm `text_content`, `audio_pa
 - F1/F2 system test theo kịch bản, UAT, biên bản.
 - F4 hồ sơ bàn giao: README, deploy.md, hướng dẫn sử dụng.
 
-> Trạng thái code hiện tại: toàn bộ F1–F15 đã có đường chạy (F7 ghi âm mới có màn hình
-> luyện viết; phần ghi âm audio chờ HTTPS). Việc còn lại là nội dung 240 câu của An,
-> kiểm thử hệ thống của Quang Anh và UAT.
+> Trạng thái code hiện tại: **15/15 màn hình có bản Next.js**, backend FastAPI đủ 4 vai trò, 265 câu hỏi
+> trong CSDL (240 câu cho 24 bài + 25 câu placement), Docker Compose cho 2 tiến trình, khung UAT ở
+> `docs/UAT.md`, biểu mẫu câu hỏi ở `data/templates/mau_cau_hoi.xlsx`.
+>
+> Việc còn lại là của con người: An rà nghĩa tiếng Việt + bổ sung câu nghe/đọc thật, Quang Anh chạy
+> 30 kịch bản UAT, Trung dựng staging HTTPS để test ghi âm.
 
 ## Thứ tự cắt khi trễ (mục 2.6)
 
