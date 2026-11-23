@@ -59,6 +59,9 @@
 <div class="card actions">
   <p class="muted">Tiến độ bài này: <b id="pct">{{ percent }}%</b> ·
     đã học <b id="mins">{{ (seconds / 60) | round(1) }}</b> phút</p>
+  {% if question_count %}
+    <a class="btn" href="/practice/{{ lesson.id }}">Luyện tập {{ question_count }} câu</a>
+  {% endif %}
   {% if percent < 100 %}
     <button type="button" id="done-btn" class="btn">Đánh dấu đã học xong</button>
   {% else %}

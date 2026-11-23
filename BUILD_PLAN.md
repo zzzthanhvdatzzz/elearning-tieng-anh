@@ -47,9 +47,13 @@ dung bài viết / đường dẫn audio**. Đã thêm `text_content`, `audio_pa
 
 ## Tuần 4 — Sprint 2 (M4a): nộp bài và chấm
 
-- D4 ghi âm MediaRecorder (**phải chạy HTTPS, kể cả localhost** — rủi ro R2);
+- ✅ D6 (phần luyện tập): `services/practice.py` + `routers/practice.py` — 10 câu/đề, chấm ngay,
+  hiện đáp án đúng + giải thích từng câu, lịch sử các lượt, BR7 chặn lượt thứ 4 **ở server**
+  (gọi thẳng API vẫn 409), tái dùng `grade_mcq`/`auto_score` nên công thức vẫn chỉ một chỗ.
+  Chạy thật: 10.0 → 7.0 (sai 3 câu) → 10.0 → lượt 4 = 409.
+- ⬜ D5 luyện viết, nháp tự lưu 10 giây, đếm từ (F8).
+- ⬜ D4 ghi âm MediaRecorder (**phải chạy HTTPS, kể cả localhost** — rủi ro R2);
   phương án dự phòng: tải file lên.
-- D5 luyện viết, nháp tự lưu 10 giây, đếm từ.
 - D7 rubric 4 tiêu chí × 0–2,5; BR6 điểm cuối = 0,7 × tự động + 0,3 × giáo viên;
   chặn lưu khi điểm < 5,0 mà không có nhận xét (AC12.2).
 

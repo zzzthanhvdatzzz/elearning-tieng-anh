@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Luyện tập — {{ lesson.title }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/lessons/{{ lesson.id }}">← Về bài học</a></p>
+<h1>Luyện tập: {{ lesson.title }}</h1>
+<p class="muted">{{ items|length }} câu · lượt {{ attempt_no }}/{{ max_attempts }} · còn {{ attempts_left }} lượt</p>
+
+<form method="post" action="/practice/{{ lesson.id }}/submit" class="exam">
+  <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+  {% for item in items %}
+    <fieldset class="q card">
+      <legend><span class="qno">{{ loop.index }}.</span> {{ item.q.prompt }}</legend>
+      {% for opt in item.options %}
+        {% set letter = "ABCD"[loop.index0] %}
+        <label class="opt">
+          <input type="radio" name="q_{{ item.q.id }}" value="{{ letter }}" required>
+          <b>{{ letter }}.</b> {{ opt }}
+        </label>
+      {% endfor %}
+    </fieldset>
+  {% endfor %}
+  <button type="submit" class="submit">Nộp bài</button>
+</form>
+{% endblock %}

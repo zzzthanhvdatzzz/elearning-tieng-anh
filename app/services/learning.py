@@ -97,6 +97,7 @@ def lesson_detail(db: OrmSession, student: User, lesson_id: int) -> dict | None:
         "content": content,
         "percent": p.percent if p else 0,
         "seconds": p.seconds if p else 0,
+        "question_count": len(lesson.questions),
     }
 
 

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Kết quả luyện tập{% endblock %}
+{% block content %}
+<p class="muted"><a href="/lessons/{{ lesson.id }}">← Về bài học</a> · <a href="/units">Lộ trình</a></p>
+<h1>Kết quả luyện tập</h1>
+
+{% if submission %}
+  <div class="card score-card">
+    <p class="score">{{ submission.final_score }}<span>/10</span></p>
+    <p class="muted">
+      Lượt {{ submission.attempt_no }} ·
+      {{ review|selectattr("is_correct")|list|length }}/{{ review|length }} câu đúng
+      {% if submission.late_days %} · nộp muộn {{ submission.late_days }} ngày (trừ 10%/ngày){% endif %}
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Xem lại từng câu</h2>
+    {% for r in review %}
+      <div class="q review {{ 'ok' if r.is_correct else 'bad' }}">
+        <p><b>{{ loop.index }}.</b> {{ r.question.prompt }}</p>
+        <p class="muted">
+          Bạn chọn: <b>{{ r.choice or "—" }}</b> ·
+          Đáp án đúng: <b class="correct">{{ r.question.correct_key }}</b>
+          {% if r.is_correct %}<span class="done">✓ đúng</span>{% else %}<span class="wrong">✗ sai</span>{% endif %}
+        </p>
+        {% if r.question.explanation %}
+          <p class="explain">Giải thích: {{ r.question.explanation }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="card actions">
+    {% if attempts_left > 0 %}
+      <a class="btn" href="/practice/{{ lesson.id }}">Làm lại (còn {{ attempts_left }} lượt)</a>
+    {% else %}
+      <p class="muted">Đã hết lượt làm bài. Nhờ giáo viên mở lại nếu cần (BR7).</p>
+    {% endif %}
+    {% if history|length > 1 %}
+      <span class="muted">Các lượt trước:
+        {% for h in history[:-1] %}{{ h.final_score }}{% if not loop.last %} · {% endif %}{% endfor %}
+      </span>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="card"><p>Bạn chưa làm bài luyện tập này.</p>
+    <p><a class="btn" href="/practice/{{ lesson.id }}">Làm bài</a></p></div>
+{% endif %}
+{% endblock %}

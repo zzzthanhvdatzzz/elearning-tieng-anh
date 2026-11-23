@@ -60,5 +60,15 @@ select { width:100%; padding:.55rem; border:1px solid var(--line); border-radius
 .reading { white-space:pre-line; }
 .actions { display:flex; gap:1rem; align-items:center; flex-wrap:wrap; }
 .actions p { margin:0; }
+/* Kết quả luyện tập */
+.score-card { text-align:center; }
+.score { font-size:3rem; font-weight:800; color:var(--blue); margin:.2rem 0; }
+.score span { font-size:1.2rem; color:var(--muted); font-weight:500; }
+.review.ok { border-left:3px solid #1b7f4b; padding-left:.7rem; }
+.review.bad { border-left:3px solid var(--red); padding-left:.7rem; }
+.correct { color:#1b7f4b; }
+.wrong { color:var(--red); font-weight:600; }
+.explain { font-size:.92rem; color:var(--muted); background:#f7f9fc;
+  padding:.4rem .6rem; border-radius:6px; }
 .foot { text-align:center; color:var(--muted); font-size:.85rem; padding:2rem 1rem; }
 @media (max-width:360px) { .container { padding:1rem .75rem; } .topbar { padding:.5rem .75rem; } }
