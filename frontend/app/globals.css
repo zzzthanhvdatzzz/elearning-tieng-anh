@@ -311,6 +311,15 @@ a.btn { color: #fff; }
 }
 .row-between { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
 
+/* ---------------------------------------------------------------- tabs */
+.tabs { display: inline-flex; gap: .35rem; background: var(--blue-soft); padding: .3rem;
+  border-radius: 12px; margin: .2rem 0 .6rem; }
+.tab { background: transparent; border: 0; padding: .5rem 1.1rem; border-radius: 9px;
+  font-size: .98rem; color: var(--ink-2); cursor: pointer; font-weight: 500; }
+.tab:hover { color: var(--blue-dark); }
+.tab.active { background: var(--card); color: var(--blue-dark); font-weight: 700;
+  box-shadow: 0 1px 3px rgba(16,24,40,.12); }
+
 /* ---------------------------------------------------------------- landing */
 .hero.landing { padding: 2.4rem 2rem; }
 .hero.landing h1 { font-size: 2.1rem; max-width: 22ch; }
