@@ -23,6 +23,14 @@ Nạp dữ liệu mẫu: `.venv/bin/python -m app.seed`
 Nạp nội dung 4 Unit / 24 bài / 240 câu: `.venv/bin/python -m app.content_pack`
 (ngân hàng từ vựng + ngữ pháp sinh tự động — nhóm Nội dung phải rà lại nghĩa trước khi dùng thật).
 
+**Muốn có dữ liệu để demo (lớp có học sinh, bài đã chấm, hàng đợi chấm, phụ huynh đã duyệt):**
+`.venv/bin/python -m app.demo_data`
+→ giáo viên `gv.an@truong.edu.vn`, học sinh `an.nm@truong.edu.vn`, phụ huynh
+`phuhuynh.demo@truong.edu.vn`, mật khẩu chung `matkhau123`.
+
+> Vì sao máy cậu mở lên thấy lớp trống: `data/app.db` nằm trong `.gitignore` nên **không đi kèm repo**.
+> Mỗi máy có CSDL riêng; `app.seed` chỉ tạo 3 lớp rỗng, `app.demo_data` mới tạo học sinh + bài nộp.
+
 Chạy cả hệ thống bằng Docker: `docker compose up -d --build` — xem `deploy.md`.
 Kịch bản kiểm thử và biên bản UAT: `docs/UAT.md`. Biểu mẫu câu hỏi: `data/templates/mau_cau_hoi.xlsx`.
 
