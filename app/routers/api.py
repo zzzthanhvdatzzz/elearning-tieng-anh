@@ -121,6 +121,19 @@ def api_logout(request: Request, db: OrmSession = Depends(get_db)):
     return resp
 
 
+@router.get("/version")
+def api_version():
+    """Dùng để biết backend đang chạy bản nào — tránh cảnh 'mã đã sửa mà vẫn Not Found'."""
+    import subprocess
+
+    try:
+        sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True,
+                             text=True, timeout=3).stdout.strip()
+    except Exception:  # noqa: BLE001 - không có git trong container là bình thường
+        sha = ""
+    return {"ok": True, "git": sha or "unknown"}
+
+
 @router.get("/me")
 def api_me(user: User = Depends(api_user), db: OrmSession = Depends(get_db)):
     from app.services import notify
