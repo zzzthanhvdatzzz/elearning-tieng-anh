@@ -11,6 +11,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# Cho phép gọi từ bất kỳ thư mục con nào (vd frontend/): luôn chạy ở gốc repo.
+if [ ! -f "$ROOT/app/main.py" ]; then
+  echo "Không tìm thấy app/main.py ở $ROOT — hãy chạy trong thư mục repo elearning."
+  exit 1
+fi
+
 API_PORT="${API_PORT:-8010}"
 WEB_PORT="${WEB_PORT:-3000}"
 
