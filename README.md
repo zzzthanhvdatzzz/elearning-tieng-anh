@@ -30,6 +30,29 @@ Nạp dữ liệu mẫu: `.venv/bin/python -m app.seed`
 | Phụ huynh | `/parent` | gửi yêu cầu liên kết, xem báo cáo của con sau khi giáo viên duyệt |
 | Quản trị | `/admin/users`, `/admin/import` | tạo/khoá tài khoản, đặt lại mật khẩu, import câu hỏi từ Excel |
 
+## Frontend Next.js (nhánh chuyển đổi, đang làm)
+
+Giao diện cũ bằng Jinja2 vẫn chạy đủ 15 màn hình ở cổng 8010. Bản Next.js nằm trong `frontend/`
+và gọi FastAPI qua lớp JSON `/api/*`.
+
+```bash
+# cửa sổ 1 — backend
+.venv/bin/python -m uvicorn app.main:app --port 8010
+
+# cửa sổ 2 — frontend
+cd frontend
+npm install            # lần đầu
+npm run dev            # http://localhost:3000
+```
+
+Đã chuyển: `/` (điều hướng theo vai trò), `/login`, `/units`, `/lesson/[id]`.
+Còn lại: register, assignments, practice, writing, speaking, giáo viên (5 màn), phụ huynh, quản trị (2 màn).
+
+Ba điểm kỹ thuật bắt buộc khi nối Next.js với FastAPI:
+- `credentials: "include"` trong mọi `fetch` — không có thì cookie phiên không đi kèm.
+- Header `X-Requested-With: fetch` — FastAPI dùng làm hàng rào CSRF cho `/api/*` (header tuỳ biến buộc preflight, form HTML không tự gắn được).
+- CORS chỉ mở `http://localhost:3000` với `allow_credentials=True` (`app/main.py`).
+
 ## Cấu trúc (đúng kiến trúc 4 lớp ở mục 3.1)
 
 ```

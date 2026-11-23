@@ -9,3 +9,7 @@ data/uploads/
 .coverage
 htmlcov/
 data/out/
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/next-env.d.ts

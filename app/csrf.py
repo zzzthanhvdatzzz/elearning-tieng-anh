@@ -26,6 +26,16 @@ def get_csrf(request: Request) -> str:
 async def verify_csrf(request: Request) -> None:
     if request.method in SAFE_METHODS:
         return
+
+    # API JSON: yêu cầu header tuỳ biến để buộc preflight. Trình duyệt KHÔNG cho form
+    # HTML tự gắn header tuỳ biến, nên đây là hàng rào CSRF thay cho form token.
+    if request.url.path.startswith("/api/"):
+        if request.headers.get("x-requested-with") != "fetch":
+            from fastapi import HTTPException
+
+            raise HTTPException(status_code=403, detail="Thiếu header X-Requested-With: fetch")
+        return
+
     expected = request.cookies.get(COOKIE, "")
     sent = request.headers.get("X-CSRF-Token", "")
     if not sent:

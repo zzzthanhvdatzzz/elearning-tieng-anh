@@ -16,7 +16,8 @@ from app.csrf import CsrfCookieMiddleware, verify_csrf
 from app.db import get_db
 from app.deps import current_user, optional_user
 from app.models import User
-from app.routers import admin, auth, learning, parent, placement, practice, report, speaking, teacher, writing
+from app.routers import (admin, api, auth, learning, parent, placement, practice, report,
+                         speaking, teacher, writing)
 from app.templating import templates
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -37,6 +38,18 @@ app.include_router(report.router)
 app.include_router(parent.router)
 app.include_router(admin.router)
 app.include_router(speaking.router)
+app.include_router(api.router)
+
+# Frontend Next.js chạy cổng 3000 → cần CORS kèm credentials (cookie phiên).
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-Requested-With", "X-CSRF-Token"],
+)
 
 
 @app.on_event("startup")
