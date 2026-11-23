@@ -15,7 +15,7 @@ Mở http://127.0.0.1:8010 — kiểm tra http://127.0.0.1:8010/health trả `{"
 (Cổng 8000 đang bị app VDL Timesheet chiếm trên máy này, nên dùng 8010.)
 Tài liệu API tự sinh: http://127.0.0.1:8010/docs
 
-Chạy test: `.venv/bin/python -m pytest -q` (34 test)
+Chạy test: `.venv/bin/python -m pytest -q` (75 test, ~3,5 phút vì mỗi test dựng lại CSDL)
 
 Nạp dữ liệu mẫu: `.venv/bin/python -m app.seed`
 → giáo viên `gv.an@truong.edu.vn` / `matkhau123`, mã lớp `8A1X21`, 25 câu kiểm tra đầu vào.
