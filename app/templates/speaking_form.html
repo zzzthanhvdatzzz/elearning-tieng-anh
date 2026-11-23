@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Luyện nói — {{ lesson.title }}{% endblock %}
+{% block content %}
+<p class="muted"><a href="/lessons/{{ lesson.id }}">← Về bài học</a></p>
+<h1>Luyện nói: {{ lesson.title }}</h1>
+<p class="muted">Lượt {{ attempts_used + 1 }}/{{ assignment.max_attempts }} · còn {{ attempts_left }} lượt</p>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="card">
+  <h2>Đề bài</h2>
+  <p class="prompt">{{ prompt }}</p>
+</div>
+
+<div class="card">
+  <h2>Cách 1 — Ghi âm ngay trên trình duyệt</h2>
+  <p id="secure-warn" class="alert alert-error" hidden>
+    Trình duyệt chặn micro vì trang không chạy HTTPS. Hãy dùng cách 2 bên dưới, hoặc mở trang
+    bằng https://.
+  </p>
+  <p>
+    <button type="button" id="rec-btn" class="btn">● Bắt đầu ghi</button>
+    <button type="button" id="stop-btn" class="btn" disabled>■ Dừng</button>
+    <span id="rec-status" class="muted"></span>
+  </p>
+  <audio id="preview" controls hidden></audio>
+  <p>
+    <button type="button" id="send-btn" class="btn" disabled>Nộp bản ghi này</button>
+  </p>
+</div>
+
+<div class="card">
+  <h2>Cách 2 — Tải file ghi âm lên</h2>
+  <p class="muted">Dùng điện thoại ghi âm sẵn rồi tải lên. Tối đa {{ max_mb }} MB · {{ exts }}</p>
+  <form method="post" action="/speaking/{{ lesson.id }}/upload" enctype="multipart/form-data" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+    <label>Chọn file
+      <input type="file" name="file" accept="audio/*" required>
+    </label>
+    <button type="submit">Nộp file</button>
+  </form>
+</div>
+
+<script>
+(() => {
+  const btnRec = document.getElementById('rec-btn');
+  const btnStop = document.getElementById('stop-btn');
+  const btnSend = document.getElementById('send-btn');
+  const status = document.getElementById('rec-status');
+  const preview = document.getElementById('preview');
+  const warn = document.getElementById('secure-warn');
+  const CSRF = document.body.dataset.csrf;
+  let recorder = null, chunks = [], blob = null, seconds = 0, timer = null;
+
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    warn.hidden = false;                       // rơi vào rủi ro R2 → dùng cách 2
+    btnRec.disabled = true;
+    return;
+  }
+
+  btnRec.addEventListener('click', async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+      recorder = new MediaRecorder(stream);
+      chunks = [];
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = () => {
+        blob = new Blob(chunks, {type: recorder.mimeType || 'audio/webm'});
+        preview.src = URL.createObjectURL(blob);
+        preview.hidden = false;
+        btnSend.disabled = false;
+        stream.getTracks().forEach(t => t.stop());
+        status.textContent = `Đã ghi ${seconds} giây — nghe lại rồi nộp.`;
+      };
+      recorder.start();
+      seconds = 0;
+      timer = setInterval(() => { seconds += 1; status.textContent = `Đang ghi ${seconds}s...`; }, 1000);
+      btnRec.disabled = true; btnStop.disabled = false;
+    } catch (err) {
+      warn.hidden = false;
+      status.textContent = '';
+    }
+  });
+
+  btnStop.addEventListener('click', () => {
+    if (recorder && recorder.state === 'recording') recorder.stop();
+    clearInterval(timer);
+    btnStop.disabled = true; btnRec.disabled = false;
+  });
+
+  btnSend.addEventListener('click', async () => {
+    if (!blob) return;
+    const fd = new FormData();
+    fd.append('file', blob, 'bai-noi.webm');
+    btnSend.disabled = true;
+    status.textContent = 'Đang nộp...';
+    const r = await fetch('/speaking/{{ lesson.id }}/upload', {
+      method: 'POST', body: fd, headers: {'X-CSRF-Token': CSRF},
+    });
+    if (r.ok || r.redirected) location.href = '/speaking/{{ lesson.id }}/result';
+    else { status.textContent = 'Nộp thất bại, thử lại hoặc dùng cách 2.'; btnSend.disabled = false; }
+  });
+})();
+</script>
+{% endblock %}

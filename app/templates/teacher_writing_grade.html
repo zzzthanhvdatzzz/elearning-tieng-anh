@@ -6,7 +6,12 @@
 
 <div class="card">
   <p class="muted">{{ words }} từ{% if words < 40 %} · <span class="wrong">cảnh báo: dưới 40 từ</span>{% endif %}</p>
-  <blockquote class="essay-view">{{ submission.text_content }}</blockquote>
+  {% if submission.audio_path %}
+    <h2>Bản ghi bài nói</h2>
+    <audio controls src="/audio/{{ submission.id }}"></audio>
+  {% else %}
+    <blockquote class="essay-view">{{ submission.text_content }}</blockquote>
+  {% endif %}
 </div>
 
 <form method="post" action="/teacher/writing/{{ submission.id }}/grade" class="card form">

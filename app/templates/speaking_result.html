@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Bài nói của tôi{% endblock %}
+{% block content %}
+<p class="muted"><a href="/lessons/{{ lesson.id }}">← Về bài học</a></p>
+<h1>Bài nói của tôi</h1>
+
+{% if last %}
+  <div class="card">
+    <p class="muted">Lượt {{ last.attempt_no }} · nộp {{ last.submitted_at.strftime("%d/%m/%Y %H:%M") }}</p>
+    {% if last.audio_path %}
+      <audio controls src="/audio/{{ last.id }}"></audio>
+    {% endif %}
+    {% if last.status == "graded" %}
+      <p><strong>Điểm:</strong> {{ last.final_score }} / 10</p>
+    {% else %}
+      <p><strong>Đang chờ giáo viên nghe và chấm.</strong></p>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="card"><p>Bạn chưa nộp bài nói cho bài này.</p></div>
+{% endif %}
+
+{% if attempts_left > 0 %}
+  <p><a class="btn" href="/speaking/{{ lesson.id }}">Ghi âm lại (còn {{ attempts_left }} lượt)</a></p>
+{% endif %}
+{% endblock %}

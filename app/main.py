@@ -16,7 +16,7 @@ from app.csrf import CsrfCookieMiddleware, verify_csrf
 from app.db import get_db
 from app.deps import current_user, optional_user
 from app.models import User
-from app.routers import admin, auth, learning, parent, placement, practice, report, teacher, writing
+from app.routers import admin, auth, learning, parent, placement, practice, report, speaking, teacher, writing
 from app.templating import templates
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -36,6 +36,7 @@ app.include_router(teacher.router)
 app.include_router(report.router)
 app.include_router(parent.router)
 app.include_router(admin.router)
+app.include_router(speaking.router)
 
 
 @app.on_event("startup")
