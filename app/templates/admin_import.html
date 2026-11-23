@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Import câu hỏi{% endblock %}
+{% block content %}
+<h1>Import câu hỏi từ Excel</h1>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+{% if result %}
+  <div class="card">
+    <h2>Kết quả import vào bài {{ lesson.title }}</h2>
+    <p><b>{{ result.added }}</b> câu hợp lệ đã thêm ·
+      <b class="wrong">{{ result.errors|length }}</b> dòng lỗi bị bỏ qua</p>
+    {% if result.errors %}
+      <table class="table">
+        <thead><tr><th>Dòng</th><th>Lý do</th></tr></thead>
+        <tbody>
+          {% for e in result.errors %}
+            <tr><td>{{ e.row }}</td><td>{{ e.reason }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+{% endif %}
+
+<div class="card">
+  <h2>Biểu mẫu</h2>
+  <p>Sheet đầu tiên, dòng 1 là tiêu đề với đúng các cột:</p>
+  <p><code>{{ columns | join(" | ") }}</code></p>
+  <p class="muted">Dòng sai sẽ bị bỏ qua và liệt kê lý do; dòng đúng vẫn được nhập.</p>
+</div>
+
+<div class="card">
+  <form method="post" action="/admin/questions/import" enctype="multipart/form-data" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+    <label>Bài học nhận câu hỏi
+      <select name="lesson_id" required>
+        {% for l in lessons %}
+          <option value="{{ l.id }}">{{ l.code }} — {{ l.title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>File Excel (.xlsx, tối đa 5 MB)
+      <input type="file" name="file" accept=".xlsx,.xlsm" required>
+    </label>
+    <button type="submit">Import</button>
+  </form>
+</div>
+{% endblock %}

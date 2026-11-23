@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Báo cáo của con{% endblock %}
+{% block content %}
+<h1>Báo cáo của con</h1>
+
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="card">
+  <h2>Liên kết với tài khoản của con</h2>
+  <p class="muted">Nhập email học sinh đã đăng ký. Giáo viên chủ nhiệm bộ môn sẽ duyệt trước khi
+  bạn xem được dữ liệu (BR3).</p>
+  <form method="post" action="/parent/link" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+    <label>Email của con
+      <input type="email" name="student_email" required placeholder="hs@truong.edu.vn">
+    </label>
+    <button type="submit">Gửi yêu cầu liên kết</button>
+  </form>
+</div>
+
+{% if children %}
+  <div class="card">
+    <h2>Các con đã liên kết ({{ children|length }})</h2>
+    <ul class="lesson-list">
+      {% for c in children %}
+        <li>
+          <a href="/parent/report/{{ c.id }}">{{ c.full_name or c.email }}</a>
+          <span class="skill">{{ c.cefr_level or "chưa xếp" }}</span>
+          <form method="post" action="/parent/unlink/{{ c.id }}" class="inline">
+            <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+            <button type="submit" class="link">Huỷ liên kết</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% else %}
+  <div class="card"><p class="muted">Chưa có liên kết nào được duyệt.</p></div>
+{% endif %}
+{% endblock %}

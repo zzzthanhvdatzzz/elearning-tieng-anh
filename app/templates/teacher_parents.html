@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Duyệt liên kết phụ huynh{% endblock %}
+{% block content %}
+<h1>Yêu cầu liên kết phụ huynh</h1>
+<p class="muted">{{ rows|length }} yêu cầu đang chờ · chỉ học sinh lớp bạn phụ trách (BR9).</p>
+
+{% if rows %}
+  <table class="table">
+    <thead><tr><th>Học sinh</th><th>Lớp</th><th>Phụ huynh</th><th></th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+        <tr>
+          <td>{{ r.student.full_name or r.student.email }}</td>
+          <td>{{ r.klass.name }}</td>
+          <td>{{ r.parent.full_name or r.parent.email if r.parent else "—" }}</td>
+          <td class="actions">
+            <form method="post" action="/teacher/parents/{{ r.link.id }}/approve" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+              <button type="submit">Duyệt</button>
+            </form>
+            <form method="post" action="/teacher/parents/{{ r.link.id }}/reject" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+              <button type="submit" class="link">Từ chối</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <div class="card"><p>Không có yêu cầu nào đang chờ.</p></div>
+{% endif %}
+{% endblock %}

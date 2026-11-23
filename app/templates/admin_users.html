@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Tài khoản{% endblock %}
+{% block content %}
+<h1>Tài khoản</h1>
+{% if error %}<div class="alert alert-error">{{ error }}</div>{% endif %}
+
+<div class="card">
+  <h2>Tạo tài khoản</h2>
+  <p class="muted">Học sinh tự đăng ký bằng mã lớp; giáo viên, phụ huynh, quản trị tạo ở đây.</p>
+  <form method="post" action="/admin/users" class="form">
+    <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+    <label>Email <input type="email" name="email" required></label>
+    <label>Họ tên <input type="text" name="full_name"></label>
+    <label>Vai trò
+      <select name="role">
+        {% for r in roles %}<option value="{{ r }}">{{ role_label(r) }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Mật khẩu ban đầu (≥ 8 ký tự) <input type="text" name="password" required minlength="8"></label>
+    <button type="submit">Tạo tài khoản</button>
+  </form>
+</div>
+
+<form method="get" action="/admin/users" class="card form">
+  <label>Tìm theo email hoặc tên
+    <input type="text" name="q" value="{{ q or '' }}">
+  </label>
+  <label>Lọc theo vai trò
+    <select name="role">
+      <option value="">— tất cả —</option>
+      {% for r in roles %}
+        <option value="{{ r }}" {% if role_filter == r %}selected{% endif %}>{{ role_label(r) }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button type="submit">Lọc</button>
+</form>
+
+<table class="table">
+  <thead><tr><th>Email</th><th>Họ tên</th><th>Vai trò</th><th>Trạng thái</th><th></th></tr></thead>
+  <tbody>
+    {% for u in rows %}
+      <tr>
+        <td>{{ u.email }}</td>
+        <td>{{ u.full_name or "—" }}</td>
+        <td>{{ role_label(u.role) }}</td>
+        <td>{% if u.is_active %}<span class="done">đang hoạt động</span>{% else %}<span class="wrong">đã khoá</span>{% endif %}</td>
+        <td class="actions">
+          {% if u.is_active %}
+            <form method="post" action="/admin/users/{{ u.id }}/lock" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+              <button type="submit" class="link">Khoá</button>
+            </form>
+          {% else %}
+            <form method="post" action="/admin/users/{{ u.id }}/unlock" class="inline">
+              <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+              <button type="submit" class="link">Mở khoá</button>
+            </form>
+          {% endif %}
+          <form method="post" action="/admin/users/{{ u.id }}/reset-password" class="inline">
+            <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+            <input type="text" name="new_password" minlength="8" required placeholder="mật khẩu mới" style="width:11rem">
+            <button type="submit" class="link">Đặt lại</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

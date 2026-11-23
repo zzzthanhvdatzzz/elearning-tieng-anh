@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Báo cáo tuần của con{% endblock %}
+{% block content %}
+<p class="muted"><a href="/parent">← Về trang phụ huynh</a></p>
+<h1>{{ report.student.full_name or report.student.email }}</h1>
+<p class="muted">Báo cáo đọc trong dưới một phút: điểm theo kỹ năng, thời gian học, bài gần đây.</p>
+
+<div class="card stats">
+  <span><b>{{ report.minutes }}</b> phút học</span>
+  <span><b>{{ report.submissions|length }}</b> bài đã nộp</span>
+  <span><b>{{ report.student.cefr_level or "chưa xếp" }}</b> trình độ</span>
+</div>
+
+<div class="card">
+  <h2>Điểm theo kỹ năng</h2>
+  {% if report.skills %}
+    <table class="table">
+      <thead><tr><th>Kỹ năng</th><th>Điểm trung bình</th></tr></thead>
+      <tbody>
+        {% for s in report.skills %}
+          <tr><td>{{ s.label }}</td>
+            <td>{% if s.weak %}<span class="wrong">{{ s.avg }}</span>{% else %}{{ s.avg }}{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if report.weakest %}
+      <p class="explain">Con đang yếu nhất ở <b>{{ report.weakest.label }}</b>. Nên nhắc con luyện thêm phần này.</p>
+    {% endif %}
+  {% else %}
+    <p class="muted">Chưa có bài nào được chấm.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h2>Bài nộp gần đây</h2>
+  {% if report.submissions %}
+    <table class="table">
+      <thead><tr><th>Bài</th><th>Điểm</th><th>Nộp lúc</th></tr></thead>
+      <tbody>
+        {% for r in report.submissions %}
+          <tr>
+            <td>{{ r.assignment.title }}</td>
+            <td>{{ r.submission.final_score if r.submission.final_score is not none else "chờ chấm" }}</td>
+            <td>{{ r.submission.submitted_at.strftime("%d/%m %H:%M") }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">Chưa nộp bài nào.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -77,6 +77,36 @@ def remove_student(class_id: int, student_id: int,
     return RedirectResponse(f"/teacher/classes/{class_id}", status_code=303)
 
 
+@router.get("/parents", response_class=HTMLResponse)
+def parents_queue(request: Request, user: User = Depends(role_required("teacher")),
+                  db: OrmSession = Depends(get_db)):
+    from app.services import parent as parent_svc
+
+    return templates.TemplateResponse(
+        request, "teacher_parents.html",
+        {"user": user, "title": "Duyệt liên kết phụ huynh",
+         "rows": parent_svc.pending_for_teacher(db, user)},
+    )
+
+
+@router.post("/parents/{link_id}/approve")
+def approve_parent(link_id: int, user: User = Depends(role_required("teacher")),
+                   db: OrmSession = Depends(get_db)):
+    from app.services import parent as parent_svc
+
+    parent_svc.decide(db, user, link_id, True)
+    return RedirectResponse("/teacher/parents", status_code=303)
+
+
+@router.post("/parents/{link_id}/reject")
+def reject_parent(link_id: int, user: User = Depends(role_required("teacher")),
+                  db: OrmSession = Depends(get_db)):
+    from app.services import parent as parent_svc
+
+    parent_svc.decide(db, user, link_id, False)
+    return RedirectResponse("/teacher/parents", status_code=303)
+
+
 @router.post("/classes/{class_id}/assignments")
 def create_assignment(
     class_id: int,

@@ -3,6 +3,7 @@
 Sprint 0 (tuần 2, mốc M2): đăng nhập chạy được, tạo lớp chạy được.
 Mỗi nhóm chức năng mới sẽ là một router riêng trong app/routers/.
 """
+import os
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Request
@@ -15,7 +16,7 @@ from app.csrf import CsrfCookieMiddleware, verify_csrf
 from app.db import get_db
 from app.deps import current_user, optional_user
 from app.models import User
-from app.routers import auth, learning, placement, practice, report, teacher, writing
+from app.routers import admin, auth, learning, parent, placement, practice, report, teacher, writing
 from app.templating import templates
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -33,6 +34,18 @@ app.include_router(practice.router)
 app.include_router(writing.router)
 app.include_router(teacher.router)
 app.include_router(report.router)
+app.include_router(parent.router)
+app.include_router(admin.router)
+
+
+@app.on_event("startup")
+def _start_background_jobs() -> None:
+    """Worker báo cáo tuần chạy trong cùng tiến trình (mục 3.1) — tắt được bằng DISABLE_JOBS=1."""
+    if os.getenv("DISABLE_JOBS") == "1":
+        return
+    from app.jobs import weekly_email
+
+    weekly_email.start()
 
 
 @app.get("/health")

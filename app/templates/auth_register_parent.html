@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Đăng ký phụ huynh{% endblock %}
+{% block content %}
+<h1>Đăng ký tài khoản phụ huynh</h1>
+<p class="muted">Sau khi đăng ký, bạn nhập email của con để gửi yêu cầu liên kết; giáo viên duyệt
+thì mới xem được báo cáo (BR3).</p>
+<form method="post" action="/auth/register-parent" class="card form">
+  <input type="hidden" name="_csrf" value="{{ csrf_token(request) }}">
+  <label>Họ và tên
+    <input type="text" name="full_name" value="{{ full_name or '' }}" required>
+  </label>
+  <label>Email
+    <input type="email" name="email" value="{{ email or '' }}" required autocomplete="email">
+  </label>
+  <label>Mật khẩu (tối thiểu 8 ký tự)
+    <input type="password" name="password" required minlength="8" autocomplete="new-password">
+  </label>
+  <button type="submit">Tạo tài khoản</button>
+</form>
+<p class="muted">Đã có tài khoản? <a href="/auth/login">Đăng nhập</a></p>
+{% endblock %}

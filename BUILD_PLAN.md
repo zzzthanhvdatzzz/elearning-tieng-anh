@@ -70,14 +70,24 @@ dung bài viết / đường dẫn audio**. Đã thêm `text_content`, `audio_pa
   nhất, phút học, biểu đồ 6 tuần, lịch sử nộp; báo cáo lớp có danh sách "cần can thiệp" và
   xuất CSV (đường dẫn `/reports/class/{id}/export.csv` — dạng `.csv` cũ trả 422 vì xung đột
   route với `{class_id}: int`).
-- ⬜ Email báo cáo tuần cho phụ huynh (job APScheduler thứ Hai) + luồng duyệt `parent_links`.
-- ⬜ E5/E6 liên kết phụ huynh + import Excel.
-- ⬜ F3 Docker + Nginx + Uvicorn.
+- ✅ Email báo cáo tuần cho phụ huynh: `jobs/weekly_email.py` — thread nền trong cùng tiến trình,
+  idempotent theo (tuần ISO, phụ huynh, học sinh), có catch-up; chưa cấu hình SMTP thì ghi
+  `data/out/weekly/*.eml` và **nói rõ là chưa gửi thật** (`smtp: false` trong kết quả job).
+- ✅ E5: liên kết phụ huynh + luồng duyệt giáo viên (`/parent`, `/teacher/parents`), BR3 chặn
+  xem trước khi duyệt, huỷ liên kết thì mất quyền ngay.
+- ✅ E6 + F15: import câu hỏi từ Excel (`services/admin.py`), kiểm tra từng dòng, bỏ dòng lỗi
+  và liệt kê lý do, giới hạn 5 MB, chỉ nhận `.xlsx`.
+- ✅ F2: quản trị tài khoản — tạo, khoá/mở, đặt lại mật khẩu; khoá tài khoản huỷ mọi phiên ngay.
+- ✅ F3: `Dockerfile` + `deploy.md` (Nginx, HTTPS cho ghi âm, sao lưu, checklist nghiệm thu).
 
 ## Tuần 6 — UAT và bàn giao (M5)
 
 - F1/F2 system test theo kịch bản, UAT, biên bản.
 - F4 hồ sơ bàn giao: README, deploy.md, hướng dẫn sử dụng.
+
+> Trạng thái code hiện tại: toàn bộ F1–F15 đã có đường chạy (F7 ghi âm mới có màn hình
+> luyện viết; phần ghi âm audio chờ HTTPS). Việc còn lại là nội dung 240 câu của An,
+> kiểm thử hệ thống của Quang Anh và UAT.
 
 ## Thứ tự cắt khi trễ (mục 2.6)
 

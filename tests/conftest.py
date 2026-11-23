@@ -8,6 +8,8 @@ from pathlib import Path
 
 _TMP_DB = Path(tempfile.mkdtemp()) / "test.db"
 os.environ["DATABASE_URL"] = f"sqlite:///{_TMP_DB}"
+os.environ["DISABLE_JOBS"] = "1"                       # không chạy thread báo cáo tuần khi test
+os.environ["EMAIL_OUT_DIR"] = str(Path(tempfile.mkdtemp()) / "weekly")
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

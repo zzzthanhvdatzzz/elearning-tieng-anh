@@ -20,6 +20,16 @@ Chạy test: `.venv/bin/python -m pytest -q` (75 test, ~3,5 phút vì mỗi test
 Nạp dữ liệu mẫu: `.venv/bin/python -m app.seed`
 → giáo viên `gv.an@truong.edu.vn` / `matkhau123`, mã lớp `8A1X21`, 25 câu kiểm tra đầu vào.
 
+## Vai trò và đường dẫn chính
+
+| Vai trò | Trang | Chức năng |
+|---|---|---|
+| Khách | `/auth/register`, `/auth/register-parent` | học sinh tự đăng ký bằng mã lớp; phụ huynh tự đăng ký |
+| Học sinh | `/placement`, `/units`, `/assignments`, `/practice/{lesson}`, `/writing/{lesson}`, `/reports/student/{id}` | kiểm tra đầu vào → lộ trình → học bài → luyện tập/viết → xem điểm |
+| Giáo viên | `/teacher/classes`, `/teacher/placement`, `/teacher/writing`, `/teacher/parents`, `/reports/class/{id}` | tạo lớp, giao bài, chấm placement và bài viết, duyệt phụ huynh, báo cáo lớp + CSV |
+| Phụ huynh | `/parent` | gửi yêu cầu liên kết, xem báo cáo của con sau khi giáo viên duyệt |
+| Quản trị | `/admin/users`, `/admin/import` | tạo/khoá tài khoản, đặt lại mật khẩu, import câu hỏi từ Excel |
+
 ## Cấu trúc (đúng kiến trúc 4 lớp ở mục 3.1)
 
 ```
@@ -31,6 +41,7 @@ app/
   services/          # 6 service thuần: scoring, placement, progress, report, storage, notify
   templates/         # Jinja2 + Bootstrap 5
   static/            # css, js (recorder.js), audio mẫu
+  jobs/              # weekly_email.py — báo cáo tuần cho phụ huynh
 tests/               # pytest, mỗi AC một test
 data/                # app.db, uploads/ (không commit)
 ```

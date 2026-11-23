@@ -8,3 +8,4 @@ data/uploads/
 .pytest_cache/
 .coverage
 htmlcov/
+data/out/

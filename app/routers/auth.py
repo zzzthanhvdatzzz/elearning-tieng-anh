@@ -111,6 +111,38 @@ def register(
     return resp
 
 
+@router.get("/register-parent", response_class=HTMLResponse)
+def register_parent_form(request: Request):
+    return templates.TemplateResponse(request, "auth_register_parent.html", {})
+
+
+@router.post("/register-parent")
+def register_parent(request: Request,
+                    email: str = Form(...),
+                    password: str = Form(...),
+                    full_name: str = Form(""),
+                    db: OrmSession = Depends(get_db)):
+    email = email.strip().lower()
+    if db.execute(select(User).where(User.email == email)).scalar_one_or_none():
+        return _render_error(request, "auth_register_parent.html", "Email này đã được đăng ký", 409,
+                             email=email, full_name=full_name)
+    if len(password) < 8:
+        return _render_error(request, "auth_register_parent.html", "Mật khẩu phải có ít nhất 8 ký tự", 422,
+                             email=email, full_name=full_name)
+
+    parent = User(email=email, password_hash=hash_password(password),
+                  full_name=full_name.strip(), role="parent")
+    db.add(parent)
+    db.commit()
+    db.refresh(parent)
+
+    token = create_session(db, parent)
+    resp = RedirectResponse("/parent", status_code=status.HTTP_303_SEE_OTHER)
+    resp.set_cookie(COOKIE_NAME, token, httponly=True, samesite="lax",
+                    max_age=SESSION_HOURS * 3600, path="/")
+    return resp
+
+
 @router.post("/logout")
 def logout(request: Request, db: OrmSession = Depends(get_db)):
     revoke_session(db, request.cookies.get(COOKIE_NAME))
