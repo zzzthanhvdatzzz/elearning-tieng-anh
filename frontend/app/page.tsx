@@ -9,7 +9,7 @@ export default function Home() {
 
   useEffect(() => {
     api<Me>("/api/me")
-      .then((me) => router.replace(me.role === "student" ? "/units" : "/login"))
+      .then((me) => router.replace(me.home))
       .catch(() => router.replace("/login"));
   }, [router]);
 

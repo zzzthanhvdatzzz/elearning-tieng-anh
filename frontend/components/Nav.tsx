@@ -32,6 +32,20 @@ export default function Nav() {
                 <Link href="/assignments">Bài được giao</Link>
               </>
             )}
+            {me.role === "teacher" && (
+              <>
+                <Link href="/teacher/classes">Lớp</Link>
+                <Link href="/teacher/writing">Chấm bài</Link>
+                <Link href="/teacher/parents">Duyệt phụ huynh</Link>
+              </>
+            )}
+            {me.role === "parent" && <Link href="/parent">Báo cáo của con</Link>}
+            {me.role === "admin" && (
+              <>
+                <Link href="/admin/users">Tài khoản</Link>
+                <Link href="/admin/import">Import câu hỏi</Link>
+              </>
+            )}
             <span className="who">{me.full_name || me.email} · {ROLE_LABEL[me.role] ?? me.role}</span>
             <button type="button" className="link" onClick={logout}>Đăng xuất</button>
           </>

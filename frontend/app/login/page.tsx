@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError, Me } from "@/lib/api";
@@ -12,6 +12,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Đã có phiên thì không hiện form nữa: đưa thẳng về trang đúng vai trò.
+  // (Backend trả `home` cho từng vai trò: học sinh /units, giáo viên /teacher/classes,
+  //  phụ huynh /parent, quản trị /admin/users.)
+  useEffect(() => {
+    api<Me>("/api/me").then((me) => router.replace(me.home)).catch(() => {});
+  }, [router]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -21,7 +28,7 @@ export default function LoginPage() {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
-      router.replace(me.role === "student" ? "/units" : "/assignments");
+      router.replace(me.home);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Không kết nối được tới server");
       setBusy(false);
