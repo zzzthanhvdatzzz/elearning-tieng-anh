@@ -31,14 +31,17 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="hero">
+      <header className="dashboard-welcome">
+        <div className="dashboard-greeting">
+        <p className="dashboard-label">Góc học tập EnglishHub</p>
         <h1>Xin chào, {data.name}</h1>
         <p className="muted">
           {ROLE_LABEL[data.role] ?? data.role}
           {data.cefr ? ` · trình độ ${data.cefr}` : ""}
           {data.klass ? ` · lớp ${data.klass.name}` : ""}
         </p>
-      </div>
+        </div>
+      </header>
 
       {data.role === "student" && <StudentDash d={data} />}
       {data.role === "teacher" && <TeacherDash d={data} />}
@@ -145,7 +148,7 @@ function TeacherDash({ d }: { d: Any }) {
         <Stat value={d.parent_requests} label="yêu cầu phụ huynh" />
       </div>
 
-      <div className="grid-actions">
+      <div className="grid-actions dashboard-actions">
         <Link className="card action" href="/teacher/classes">
           <strong>Lớp &amp; giao bài</strong>
           <span className="muted">Tạo lớp, thêm học sinh, giao bài có hạn</span>
