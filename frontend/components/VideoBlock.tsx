@@ -19,22 +19,28 @@ type Info = {
   rules?: { complete_ratio: number; heartbeat_seconds: number; seek_blocked: boolean };
 };
 
-const HEARTBEAT_MS = 10_000;   // khớp với server: mỗi nhịp cộng tối đa 20 giây
+const HEARTBEAT_MS = 10_000;
+
+function mmss(sec: number) {
+  const s = Math.max(0, Math.round(sec));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
 
 export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; onChanged?: () => void }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [error, setError] = useState("");
   const [flash, setFlash] = useState("");
+  const [warn, setWarn] = useState("");
   const [link, setLink] = useState("");
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [openForm, setOpenForm] = useState(false);
-  const [warn, setWarn] = useState("");
+  const [mode, setMode] = useState<"link" | "upload">("link");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const maxAllowedRef = useRef(0);      // vị trí xa nhất được phép tua tới
-  const lastSentRef = useRef(0);        // vị trí đã gửi gần nhất
+  const maxAllowedRef = useRef(0);
+  const lastSentRef = useRef(0);
 
   const load = useCallback(() => {
     api<Info>(`/api/lessons/${lessonId}/video`)
@@ -43,11 +49,10 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
         setProgress(d.progress);
         maxAllowedRef.current = d.progress?.position ?? 0;
       })
-      .catch(() => setInfo(null));   // chưa có video hoặc không có quyền: ẩn
+      .catch(() => setInfo(null));
   }, [lessonId]);
   useEffect(load, [load]);
 
-  // Nhịp tim: chỉ gửi khi đang phát, để server cộng đúng phần thực xem
   useEffect(() => {
     if (!info || info.kind !== "file" || info.can_manage) return;
     const timer = setInterval(async () => {
@@ -63,27 +68,23 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
         });
         setProgress(p);
         maxAllowedRef.current = p.position;
-        if (p.completed) setFlash("Đã hoàn thành bài học (xem ≥ 80%).");
-      } catch {
-        /* mất mạng tạm thời: nhịp sau gửi lại */
-      }
+        if (p.completed) setFlash("Đã hoàn thành bài học.");
+      } catch { /* nhịp sau gửi lại */ }
     }, HEARTBEAT_MS);
     return () => clearInterval(timer);
   }, [info, lessonId]);
 
-  // Chặn tua tới: kéo thanh tới vượt vị trí đã xem thì kéo về chỗ cũ
   function onSeeking() {
     const v = videoRef.current;
     if (!v || info?.can_manage) return;
-    const allowed = maxAllowedRef.current + 2;   // +2s dung sai cho bộ đệm
+    const allowed = maxAllowedRef.current + 2;
     if (v.currentTime > allowed) {
       v.currentTime = maxAllowedRef.current;
-      setWarn("Không tua được: bạn phải xem tiếp từ chỗ đang dừng.");
+      setWarn("Không tua được — xem tiếp từ chỗ đang dừng.");
       setTimeout(() => setWarn(""), 3000);
     }
   }
 
-  // Ghi nhận khi dừng/thoát giữa chừng
   function onPause() {
     const v = videoRef.current;
     if (!v || !v.duration || info?.can_manage) return;
@@ -102,7 +103,7 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
       await api(`/api/teacher/lessons/${lessonId}/video`, {
         method: "POST", body: JSON.stringify({ url: link, title }),
       });
-      setFlash("Đã gắn video từ link.");
+      setFlash("Đã gắn video.");
       onChanged?.();
       setLink(""); setTitle(""); setOpenForm(false);
       load();
@@ -149,43 +150,47 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
   if (!info) return null;
 
   const has = info.kind !== null;
-  const isStudent = !info.can_manage;
+  const manage = info.can_manage;
 
   return (
-    <div className="card">
-      <div className="row-between">
-        <h2>Video bài giảng</h2>
-        {info.can_manage && (
-          <span style={{ display: "flex", gap: ".5rem" }}>
+    <section className="video-card">
+      <header className="video-head">
+        <div>
+          <p className="video-kicker">Bài giảng</p>
+          <h2 className="video-title">{info.title || "Video bài giảng"}</h2>
+        </div>
+        {manage && (
+          <div className="video-actions">
             <button type="button" className="btn ghost sm" onClick={() => setOpenForm((v) => !v)}>
-              {has ? "Đổi video" : "+ Thêm video"}
+              {has ? "Đổi video" : "Thêm video"}
             </button>
             {has && <button type="button" className="btn ghost sm" onClick={remove} disabled={busy}>Xoá</button>}
-          </span>
+          </div>
         )}
-      </div>
+      </header>
 
-      {flash && <div className="alert" style={{ background: "#e8f6ef", color: "#1b7f4b" }}>{flash}</div>}
-      {error && <div className="alert alert-error">{error}</div>}
-      {warn && <div className="alert" style={{ background: "#fff6e5", color: "#8a5a00" }}>{warn}</div>}
-
-      {has && info.title && <p className="muted">{info.title}</p>}
+      {(flash || error || warn) && (
+        <div className="video-notices">
+          {flash && <div className="alert" style={{ background: "#e8f6ef", color: "#1b7f4b" }}>{flash}</div>}
+          {error && <div className="alert alert-error">{error}</div>}
+          {warn && <div className="alert" style={{ background: "#fff6e5", color: "#8a5a00" }}>{warn}</div>}
+        </div>
+      )}
 
       {info.kind === "embed" && info.embed_url && (
         <>
-          <div style={{ position: "relative", paddingTop: "56.25%", marginTop: ".5rem" }}>
+          <div className="video-frame">
             <iframe
               src={info.embed_url}
               title={info.title || "Video bài giảng"}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: 0, borderRadius: 12 }}
             />
           </div>
-          {isStudent && (
-            <p className="muted" style={{ marginTop: ".5rem" }}>
-              Video nhúng từ YouTube/Drive: trình duyệt không cho hệ thống chặn tua hay đo thời lượng
-              chính xác. Muốn tính hoàn thành theo 80%, giáo viên cần tải video lên hệ thống.
+          {!manage && (
+            <p className="video-note">
+              Video nhúng từ YouTube/Drive — trình duyệt không cho chặn tua hay đo thời lượng chính xác,
+              nên bài này không tính hoàn thành theo 80%.
             </p>
           )}
         </>
@@ -194,58 +199,78 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
       {info.kind === "file" && info.stream && (
         <video
           ref={videoRef}
+          className="video-player"
           controls
           preload="metadata"
           src={`${API}${info.stream}`}
           onSeeking={onSeeking}
           onPause={onPause}
           controlsList="nodownload"
-          onContextMenu={(e) => { if (isStudent) e.preventDefault(); }}
-          style={{ width: "100%", borderRadius: 12, marginTop: ".5rem", background: "#000" }}
+          onContextMenu={(e) => { if (!manage) e.preventDefault(); }}
         >
           Trình duyệt không phát được video này.
         </video>
       )}
 
-      {isStudent && progress && has && (
-        <div style={{ marginTop: ".7rem" }}>
-          <div style={{ height: 8, background: "#e3e8ef", borderRadius: 999, overflow: "hidden" }}>
-            <div style={{
-              width: `${progress.percent}%`, height: "100%",
-              background: progress.completed ? "#079455" : "#35664b", transition: "width .3s",
-            }} />
+      {!has && !manage && <p className="video-note">Bài này chưa có video bài giảng.</p>}
+
+      {!manage && progress && has && (
+        <div className="video-progress">
+          <div className="video-progress-track">
+            <div className={`video-progress-fill${progress.completed ? " done" : ""}`}
+                 style={{ width: `${progress.percent}%` }} />
           </div>
-          <p className="muted" style={{ marginTop: ".4rem" }}>
-            Đã xem <b>{progress.percent}%</b>
+          <p className="video-progress-text">
+            <b>{progress.percent}%</b>
             {progress.completed
-              ? " — đã tính hoàn thành (≥ 80%)."
-              : ` — cần thêm ${Math.max(0, progress.needed_seconds)} giây nữa để tính hoàn thành.`}
-            {progress.duration_seconds > 0 && ` Thời lượng ${Math.floor(progress.duration_seconds / 60)} phút ${progress.duration_seconds % 60} giây.`}
+              ? " · đã tính hoàn thành"
+              : ` · còn ${mmss(progress.needed_seconds)} nữa để tính hoàn thành`}
+            {progress.duration_seconds > 0 && ` · thời lượng ${mmss(progress.duration_seconds)}`}
           </p>
         </div>
       )}
 
-      {!has && <p className="muted">Bài này chưa có video. Giáo viên có thể dán link YouTube hoặc tải video tự quay lên.</p>}
+      {manage && openForm && (
+        <div className="video-form">
+          <div className="video-tabs" role="tablist">
+            <button type="button" role="tab" aria-selected={mode === "link"}
+                    className={mode === "link" ? "tab active" : "tab"}
+                    onClick={() => setMode("link")}>Dán link</button>
+            <button type="button" role="tab" aria-selected={mode === "upload"}
+                    className={mode === "upload" ? "tab active" : "tab"}
+                    onClick={() => setMode("upload")}>Tải video lên</button>
+          </div>
 
-      {info.can_manage && openForm && (
-        <form className="form" onSubmit={saveLink} style={{ marginTop: "1rem" }}>
-          <label>Tên video (không bắt buộc)
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Unit 1 — Getting started" />
+          <label className="video-label">Tên hiển thị (không bắt buộc)
+            <input value={title} onChange={(e) => setTitle(e.target.value)}
+                   placeholder="Unit 1 — Getting started" />
           </label>
-          <label>Link YouTube hoặc Google Drive
-            <input value={link} onChange={(e) => setLink(e.target.value)}
-                   placeholder="https://www.youtube.com/watch?v=..." />
-          </label>
-          <button type="submit" disabled={busy || !link.trim()}>Gắn link</button>
 
-          <p className="muted" style={{ marginTop: "1rem" }}>
-            Hoặc tải video tự quay lên (mp4/webm/mov, tối đa 200 MB). Video tải lên mới chặn được tua
-            và tính hoàn thành theo 80%:
-          </p>
-          <input type="file" accept="video/mp4,video/webm,video/quicktime"
-                 onChange={upload} disabled={busy} style={{ marginTop: ".3rem" }} />
-        </form>
+          {mode === "link" ? (
+            <form onSubmit={saveLink}>
+              <label className="video-label">Link YouTube hoặc Google Drive
+                <input value={link} onChange={(e) => setLink(e.target.value)}
+                       placeholder="https://www.youtube.com/watch?v=..." />
+              </label>
+              <p className="video-hint">Hỗ trợ: youtube.com/watch, youtu.be, youtube.com/shorts, drive.google.com/file.</p>
+              <button type="submit" disabled={busy || !link.trim()}>Gắn link</button>
+            </form>
+          ) : (
+            <div>
+              <label className="video-dropzone">
+                <input type="file" accept="video/mp4,video/webm,video/quicktime"
+                       onChange={upload} disabled={busy} />
+                <span className="video-dropzone-text">
+                  {busy ? "Đang tải lên…" : "Chọn tệp video (mp4 / webm / mov, tối đa 200 MB)"}
+                </span>
+              </label>
+              <p className="video-hint">
+                Video tải lên mới chặn được tua và tính hoàn thành khi xem ≥ 80%.
+              </p>
+            </div>
+          )}
+        </div>
       )}
-    </div>
+    </section>
   );
 }

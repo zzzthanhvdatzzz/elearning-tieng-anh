@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import VideoBlock from "@/components/VideoBlock";
@@ -20,13 +20,19 @@ export default function TeacherVideosPage() {
   const router = useRouter();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [grades, setGrades] = useState<number[]>([]);
-  const [openId, setOpenId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [q, setQ] = useState("");
+  const [grade, setGrade] = useState<number | "">("");
   const [onlyMissing, setOnlyMissing] = useState(false);
+  const [selected, setSelected] = useState<number | null>(null);
 
   function load() {
     api<{ items: Row[]; grades: number[] }>("/api/teacher/lessons")
-      .then((d) => { setRows(d.items); setGrades(d.grades); })
+      .then((d) => {
+        setRows(d.items);
+        setGrades(d.grades);
+        setSelected((cur) => cur ?? d.items[0]?.id ?? null);
+      })
       .catch((e) => {
         if (e instanceof ApiError && (e.status === 401 || e.status === 403)) router.replace("/login");
         else setError("Không tải được danh sách bài học");
@@ -34,67 +40,92 @@ export default function TeacherVideosPage() {
   }
   useEffect(load, []);
 
-  const shown = rows ? (onlyMissing ? rows.filter((r) => !r.video_kind) : rows) : null;
+  const shown = useMemo(() => {
+    if (!rows) return null;
+    const needle = q.trim().toLowerCase();
+    return rows.filter((r) => {
+      if (grade !== "" && r.grade !== grade) return false;
+      if (onlyMissing && r.video_kind) return false;
+      if (!needle) return true;
+      return `${r.code} ${r.title} ${r.unit}`.toLowerCase().includes(needle);
+    });
+  }, [rows, q, grade, onlyMissing]);
+
+  const current = rows?.find((r) => r.id === selected) ?? null;
+  const withVideo = rows?.filter((r) => r.video_kind).length ?? 0;
 
   return (
-    <>
-      <div className="row-between">
-        <h1>Video bài giảng</h1>
-        <label className="muted" style={{ display: "flex", gap: ".4rem", alignItems: "center" }}>
-          <input type="checkbox" checked={onlyMissing} style={{ width: "auto" }}
-                 onChange={(e) => setOnlyMissing(e.target.checked)} />
-          Chỉ bài chưa có video
-        </label>
-      </div>
-      <p className="muted">
-        {grades.length > 0 && <>Khối bạn dạy: {grades.join(", ")}. </>}
-        Dán link YouTube/Drive hoặc tải video tự quay lên cho từng bài. Học sinh chỉ xem được
-        video của khối mình học.
-      </p>
+    <div className="video-admin">
+      <header className="video-admin-head">
+        <div>
+          <h1>Video bài giảng</h1>
+          <p className="muted">
+            {rows ? `${withVideo}/${rows.length} bài đã có video` : "Đang tải…"}
+            {grades.length > 0 && ` · khối ${grades.join(", ")}`}
+          </p>
+        </div>
+        <input className="video-search" value={q} onChange={(e) => setQ(e.target.value)}
+               placeholder="Tìm theo mã bài, tên bài, Unit…" />
+      </header>
 
       {error && <div className="alert alert-error">{error}</div>}
-      {!shown && <p className="muted">Đang tải…</p>}
-      {shown && shown.length === 0 && (
-        <div className="card"><p className="muted">Không có bài học nào cần thêm video.</p></div>
-      )}
 
-      {shown && shown.length > 0 && (
-        <table className="table">
-          <thead>
-            <tr><th>Bài</th><th>Khối</th><th>Kỹ năng</th><th>Video</th><th></th></tr>
-          </thead>
-          <tbody>
-            {shown.map((r) => (
-              <Fragment key={r.id}>
-                <tr>
-                  <td><b>{r.code}</b> — {r.title}<br /><span className="muted">{r.unit}</span></td>
-                  <td>{r.grade}</td>
-                  <td>{SKILL[r.skill] ?? r.skill}</td>
-                  <td>
-                    {r.video_kind === "embed" && <span className="done">Link ngoài</span>}
-                    {r.video_kind === "file" && <span className="done">Đã tải lên</span>}
-                    {!r.video_kind && <span className="muted">chưa có</span>}
-                    {r.video_title ? <><br /><span className="muted">{r.video_title}</span></> : null}
-                  </td>
-                  <td>
-                    <button type="button" className="btn ghost sm"
-                            onClick={() => setOpenId(openId === r.id ? null : r.id)}>
-                      {openId === r.id ? "Đóng" : r.video_kind ? "Sửa" : "+ Thêm video"}
-                    </button>
-                  </td>
-                </tr>
-                {openId === r.id && (
-                  <tr>
-                    <td colSpan={5} style={{ padding: 0, background: "transparent" }}>
-                      <VideoBlock lessonId={String(r.id)} onChanged={load} />
-                    </td>
-                  </tr>
-                )}
-              </Fragment>
+      <div className="video-admin-body">
+        <aside className="video-list" aria-label="Danh sách bài học">
+          <div className="video-filters">
+            <select value={grade} onChange={(e) => setGrade(e.target.value === "" ? "" : Number(e.target.value))}>
+              <option value="">Tất cả khối</option>
+              {grades.map((g) => <option key={g} value={g}>Khối {g}</option>)}
+            </select>
+            <label className="video-check">
+              <input type="checkbox" checked={onlyMissing}
+                     onChange={(e) => setOnlyMissing(e.target.checked)} />
+              Chưa có video
+            </label>
+          </div>
+
+          {!shown && <p className="muted" style={{ padding: ".8rem" }}>Đang tải…</p>}
+          {shown && shown.length === 0 && (
+            <p className="muted" style={{ padding: ".8rem" }}>Không có bài nào khớp bộ lọc.</p>
+          )}
+          <ul className="video-items">
+            {shown?.map((r) => (
+              <li key={r.id}>
+                <button type="button"
+                        className={`video-item${r.id === selected ? " active" : ""}`}
+                        onClick={() => setSelected(r.id)}>
+                  <span className="video-item-dot" data-state={r.video_kind ? "yes" : "no"} aria-hidden />
+                  <span className="video-item-text">
+                    <b>{r.code}</b> {r.title}
+                    <em>{r.unit} · {SKILL[r.skill] ?? r.skill}</em>
+                  </span>
+                </button>
+              </li>
             ))}
-          </tbody>
-        </table>
-      )}
-    </>
+          </ul>
+        </aside>
+
+        <main className="video-detail">
+          {current ? (
+            <>
+              <div className="video-detail-head">
+                <div>
+                  <p className="video-kicker">Khối {current.grade} · {SKILL[current.skill] ?? current.skill}</p>
+                  <h2>{current.code} — {current.title}</h2>
+                  <p className="muted">{current.unit}</p>
+                </div>
+                <span className={`video-status${current.video_kind ? " on" : ""}`}>
+                  {current.video_kind === "embed" ? "Link ngoài"
+                    : current.video_kind === "file" ? "Đã tải lên" : "Chưa có video"}
+                </span>
+              </div>
+              <VideoBlock lessonId={String(current.id)} onChanged={load} />
+            </>
+          ) : (
+            <div className="card"><p className="muted">Chọn một bài ở danh sách bên trái.</p></div>
+          )}
+        </main>
+      </div>
+    </div>
   );
 }
