@@ -6,6 +6,7 @@ import { API, api, ApiError } from "@/lib/api";
 type Progress = {
   watched_seconds: number; duration_seconds: number; position: number;
   percent: number; completed: boolean; needed_seconds: number;
+  needs_checkpoint: boolean; checkpoint_passed: boolean;
 };
 
 type Info = {
@@ -16,6 +17,7 @@ type Info = {
   stream: string | null;
   can_manage: boolean;
   progress: Progress | null;
+  checkpoint: { question: string; options: { key: string; text: string }[] } | null;
   rules?: { complete_ratio: number; heartbeat_seconds: number; seek_blocked: boolean };
 };
 
@@ -37,6 +39,9 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
   const [busy, setBusy] = useState(false);
   const [openForm, setOpenForm] = useState(false);
   const [mode, setMode] = useState<"link" | "upload">("link");
+  const [quiz, setQuiz] = useState<{ question: string; options: { key: string; text: string }[] } | null>(null);
+  const [answer, setAnswer] = useState("");
+  const [quizMsg, setQuizMsg] = useState("");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const maxAllowedRef = useRef(0);
@@ -47,6 +52,7 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
       .then((d) => {
         setInfo(d);
         setProgress(d.progress);
+        setQuiz(d.checkpoint ?? null);
         maxAllowedRef.current = d.progress?.position ?? 0;
       })
       .catch(() => setInfo(null));
@@ -69,6 +75,10 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
         setProgress(p);
         maxAllowedRef.current = p.position;
         if (p.completed) setFlash("Đã hoàn thành bài học.");
+        if (p.needs_checkpoint) {
+          videoRef.current?.pause();
+          load();
+        }
       } catch { /* nhịp sau gửi lại */ }
     }, HEARTBEAT_MS);
     return () => clearInterval(timer);
@@ -94,6 +104,28 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
     api<Progress>(`/api/lessons/${lessonId}/video/heartbeat`, {
       method: "POST", body: JSON.stringify({ position: pos, duration: Math.round(v.duration) }),
     }).then((p) => { setProgress(p); maxAllowedRef.current = p.position; }).catch(() => {});
+  }
+
+  async function submitCheckpoint(e: React.FormEvent) {
+    e.preventDefault();
+    setQuizMsg("");
+    try {
+      const r = await api<{ correct: boolean; completed: boolean }>(
+        `/api/lessons/${lessonId}/video/checkpoint`,
+        { method: "POST", body: JSON.stringify({ answer }) },
+      );
+      if (r.correct) {
+        setQuizMsg("Chính xác! Tiếp tục xem bài giảng.");
+        setQuiz(null);
+        setAnswer("");
+        load();
+        videoRef.current?.play().catch(() => {});
+      } else {
+        setQuizMsg("Chưa đúng. Xem lại đoạn vừa rồi rồi chọn lại.");
+      }
+    } catch (err) {
+      setQuizMsg(err instanceof ApiError ? err.message : "Không gửi được câu trả lời");
+    }
   }
 
   async function saveLink(e: React.FormEvent) {
@@ -213,6 +245,24 @@ export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; 
       )}
 
       {!has && !manage && <p className="video-note">Bài này chưa có video bài giảng.</p>}
+
+      {!manage && quiz && (
+        <form className="video-quiz" onSubmit={submitCheckpoint}>
+          <p className="video-quiz-title">Câu hỏi kiểm tra giữa video — trả lời đúng mới tính hoàn thành</p>
+          <p className="video-quiz-q">{quiz.question}</p>
+          <div className="video-quiz-options">
+            {quiz.options.map((o) => (
+              <label key={o.key} className={`video-option${answer === o.key ? " picked" : ""}`}>
+                <input type="radio" name="checkpoint" value={o.key} checked={answer === o.key}
+                       onChange={() => setAnswer(o.key)} />
+                <b>{o.key}.</b> {o.text}
+              </label>
+            ))}
+          </div>
+          {quizMsg && <p className="video-note">{quizMsg}</p>}
+          <button type="submit" disabled={!answer}>Trả lời</button>
+        </form>
+      )}
 
       {!manage && progress && has && (
         <div className="video-progress">

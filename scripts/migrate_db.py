@@ -37,6 +37,12 @@ def add_missing_columns() -> list[str]:
             "video_title": "VARCHAR(200)",
             "video_by": "INTEGER",
         },
+        "video_progress": {
+            "checkpoint_passed": "BOOLEAN DEFAULT 0",
+            "checkpoint_tries": "INTEGER DEFAULT 0",
+            "checkpoint_question_id": "INTEGER",
+            "started_at": "DATETIME",
+        },
     }
     added: list[str] = []
     existing = {t: {c["name"] for c in inspect(engine).get_columns(t)} for t in wanted}

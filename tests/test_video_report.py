@@ -1,12 +1,15 @@
 """Test nối video vào tiến độ học: dashboard, báo cáo học sinh, báo cáo phụ huynh.
 
-Lỗ hổng đã sửa: bảng `video_progress` có dữ liệu nhưng không nơi nào đọc, nên học sinh xem
-xong video hệ thống vẫn báo "chưa học gì" và phụ huynh không thấy con đã xem bài giảng.
+Tiến độ được ghi thẳng vào CSDL để kiểm phần ĐỌC dữ liệu (không phụ thuộc đồng hồ).
 """
+from datetime import datetime
+
 from sqlalchemy import select
 
-from app.models import Class, Enrollment, Lesson, Unit, User
+from app.models import Lesson, ParentLink, Unit, User, VideoProgress
 from app.seed import ensure_demo_unit
+from app.services.security import hash_password
+from tests.conftest import PASSWORD, client_for
 
 
 def _lesson(db):
@@ -16,26 +19,27 @@ def _lesson(db):
                                            Lesson.code == "U1-L1")).scalar_one()
 
 
-def _attach_and_watch(db, teacher_client, student_client, lesson, to_second=80):
+def _attach(teacher_client, lesson):
     payload = b"\x00\x00\x00\x18ftypmp42" + b"0" * 3000
     assert teacher_client.post(
         f"/api/teacher/lessons/{lesson.id}/video/upload",
         files={"file": ("b.mp4", payload, "video/mp4")},
         headers={"X-Requested-With": "fetch"},
     ).status_code == 200
-    last = None
-    for pos in range(10, to_second + 1, 10):
-        last = student_client.post(
-            f"/api/lessons/{lesson.id}/video/heartbeat",
-            json={"position": pos, "duration": 100},
-            headers={"X-Requested-With": "fetch"},
-        ).json()
-    return last
+
+
+def _seed(db, student, lesson, watched, completed=True, passed=True):
+    db.add(VideoProgress(student_id=student.id, lesson_id=lesson.id,
+                         watched_seconds=watched, duration_seconds=100, position=watched,
+                         checkpoint_passed=passed, started_at=datetime.utcnow(),
+                         completed_at=datetime.utcnow() if completed else None))
+    db.commit()
 
 
 def test_dashboard_hoc_sinh_co_so_lieu_video(student, db, student_client, teacher_client):
     lesson = _lesson(db)
-    _attach_and_watch(db, teacher_client, student_client, lesson, 80)
+    _attach(teacher_client, lesson)
+    _seed(db, student, lesson, 80)
 
     d = student_client.get("/api/dashboard").json()
     assert d["videos"]["videos_total"] == 1
@@ -45,24 +49,33 @@ def test_dashboard_hoc_sinh_co_so_lieu_video(student, db, student_client, teache
     assert d["videos"]["items"][0]["completed"] is True
 
 
+def test_dashboard_chua_xong_thi_dem_sai(student, db, student_client, teacher_client):
+    lesson = _lesson(db)
+    _attach(teacher_client, lesson)
+    _seed(db, student, lesson, 40, completed=False, passed=False)
+
+    v = student_client.get("/api/dashboard").json()["videos"]
+    assert v["videos_total"] == 1
+    assert v["videos_completed"] == 0
+    assert v["percent"] == 0
+    assert v["items"][0]["percent"] == 40
+
+
 def test_bao_cao_hoc_sinh_co_video(student, db, student_client, teacher_client):
     lesson = _lesson(db)
-    _attach_and_watch(db, teacher_client, student_client, lesson, 40)   # 40% — chưa xong
+    _attach(teacher_client, lesson)
+    _seed(db, student, lesson, 40, completed=False, passed=False)
 
     r = student_client.get(f"/api/reports/student/{student.id}").json()
     assert r["videos"]["videos_total"] == 1
     assert r["videos"]["videos_completed"] == 0
     assert r["videos"]["watched_seconds"] == 40
-    assert r["videos"]["percent"] == 0
 
 
 def test_bao_cao_phu_huynh_co_video(student, db, student_client, teacher_client):
-    from app.models import ParentLink
-    from app.services.security import hash_password
-    from tests.conftest import PASSWORD, client_for
-
     lesson = _lesson(db)
-    _attach_and_watch(db, teacher_client, student_client, lesson, 80)
+    _attach(teacher_client, lesson)
+    _seed(db, student, lesson, 80)
 
     parent = User(email="ph.video@test.vn", full_name="PH Video", role="parent",
                   password_hash=hash_password(PASSWORD))
@@ -71,14 +84,13 @@ def test_bao_cao_phu_huynh_co_video(student, db, student_client, teacher_client)
     db.add(ParentLink(parent_id=parent.id, student_id=student.id, status="approved"))
     db.commit()
 
-    c = client_for(parent.email)
-    r = c.get(f"/api/parent/report/{student.id}")
+    r = client_for(parent.email).get(f"/api/parent/report/{student.id}")
     assert r.status_code == 200
     assert r.json()["videos"]["videos_completed"] == 1
 
 
 def test_chua_co_video_thi_khong_hien_khoi(student, db, student_client):
-    _lesson(db)                       # có bài học nhưng chưa gắn video nào
+    _lesson(db)
     d = student_client.get("/api/dashboard").json()
     assert d["videos"]["videos_total"] == 0
     assert d["videos"]["items"] == []

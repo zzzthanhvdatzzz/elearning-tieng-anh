@@ -124,8 +124,10 @@ def info(lesson: Lesson) -> dict:
 
 # ------------------------------------------------------------------ theo dõi đã xem
 COMPLETE_RATIO = 0.8          # xem ≥ 80% thời lượng mới tính hoàn thành
+CHECKPOINT_RATIO = 0.5        # tới 50% thì dừng lại hỏi một câu
 MAX_HEARTBEAT_DELTA = 20      # một nhịp tim chỉ được cộng tối đa 20 giây (chặn nhảy cóc)
 HEARTBEAT_EVERY = 10          # client gửi mỗi 10 giây
+CLOCK_GRACE = 8               # dung sai đồng hồ: nhịp 10 giây có thể tới trễ/sớm vài giây
 
 
 def _row(db: OrmSession, student_id: int, lesson_id: int):
@@ -141,10 +143,11 @@ def record_heartbeat(db: OrmSession, student: User, lesson: Lesson, position: fl
                      duration: float) -> tuple[dict | None, str | None]:
     """Ghi nhận một nhịp xem. Chỉ cộng phần CHÊNH LỆCH HỢP LỆ, không cộng cú tua.
 
-    Quy tắc chống tua:
-    - delta = vị_trí_mới − vị_trí_xa_nhất_đã_xem; nếu delta < 0 (tua lùi) → không cộng.
-    - nếu delta > MAX_HEARTBEAT_DELTA (tua tới) → chỉ cộng MAX_HEARTBEAT_DELTA, và KHÔNG
-      dời mốc `position` theo cú tua (người học phải xem tiếp từ chỗ cũ).
+    Ba lớp chặn:
+    1. delta < 0 (tua lùi) → không cộng.
+    2. delta > MAX_HEARTBEAT_DELTA (tua tới) → chỉ cộng 20 giây, không dời mốc xem.
+    3. delta > thời_gian_thực_đã_trôi + CLOCK_GRACE → chỉ cộng phần thời gian thực.
+       Lớp 3 là để chặn trò mở Console bắn liên tiếp nhiều request trong 1 giây.
     """
     from datetime import datetime
 
@@ -156,26 +159,79 @@ def record_heartbeat(db: OrmSession, student: User, lesson: Lesson, position: fl
         position = 0
     duration = int(round(duration))
     position = int(round(position))
+    now = datetime.utcnow()
 
     row = _row(db, student.id, lesson.id)
-    if row is None:
+    fresh = row is None
+    if fresh:
         row = VideoProgress(student_id=student.id, lesson_id=lesson.id,
-                            watched_seconds=0, duration_seconds=duration, position=0)
+                            watched_seconds=0, duration_seconds=duration, position=0,
+                            started_at=now)
         db.add(row)
         db.flush()
+    if row.started_at is None:
+        row.started_at = now
 
     delta = position - row.position
     if delta > 0:
-        credited = min(delta, MAX_HEARTBEAT_DELTA)
+        elapsed = (now - row.updated_at).total_seconds() if not fresh else CLOCK_GRACE
+        by_last = max(0, int(elapsed) + CLOCK_GRACE)
+        # Trần tổng: không thể xem nhiều hơn thời gian thực đã trôi kể từ lần đầu bật video.
+        # Đây là lớp chặn trò bắn liên tiếp nhiều request để cộng dồn.
+        since_start = (now - row.started_at).total_seconds() + CLOCK_GRACE
+        headroom = max(0, int(since_start) - row.watched_seconds)
+        credited = max(0, min(delta, MAX_HEARTBEAT_DELTA, by_last, headroom))
         row.watched_seconds = min(row.watched_seconds + credited, duration * 2)
         row.position = min(row.position + credited, duration)
     row.duration_seconds = duration or row.duration_seconds
 
-    target = row.duration_seconds * COMPLETE_RATIO
-    if row.completed_at is None and row.watched_seconds >= target:
-        row.completed_at = datetime.utcnow()
+    if row.completed_at is None and _is_complete(db, row, lesson):
+        row.completed_at = now
     db.commit()
     return progress_of(db, student, lesson), None
+
+
+def checkpoint_question(db: OrmSession, lesson: Lesson):
+    """Câu hỏi kiểm tra giữa video: dùng câu hỏi đầu tiên có sẵn của bài học.
+
+    Không bắt giáo viên soạn thêm gì — mọi bài đã có câu hỏi luyện tập.
+    """
+    rows = list(lesson.questions)
+    return rows[0] if rows else None
+
+
+def _is_complete(db: OrmSession, row, lesson: Lesson) -> bool:
+    """Hoàn thành = xem ≥ 80% VÀ (bài không có câu hỏi, hoặc đã trả lời đúng câu giữa video)."""
+    if not row.duration_seconds:
+        return False
+    if row.watched_seconds < row.duration_seconds * COMPLETE_RATIO:
+        return False
+    if checkpoint_question(db, lesson) is None:
+        return True
+    return bool(row.checkpoint_passed)
+
+
+def answer_checkpoint(db: OrmSession, student: User, lesson: Lesson,
+                      answer: str) -> tuple[dict | None, str | None]:
+    """Trả lời câu hỏi kiểm tra. Sai thì cho thử lại, nhưng chưa được tính hoàn thành."""
+    from datetime import datetime
+
+    question = checkpoint_question(db, lesson)
+    if question is None:
+        return None, "Bài này không có câu hỏi kiểm tra."
+    row = _row(db, student.id, lesson.id)
+    if row is None or row.watched_seconds < row.duration_seconds * CHECKPOINT_RATIO:
+        return None, "Bạn cần xem tới 50% video trước khi trả lời."
+
+    row.checkpoint_tries = (row.checkpoint_tries or 0) + 1
+    correct = (answer or "").strip().upper() == (question.correct_key or "").upper()
+    if correct:
+        row.checkpoint_passed = True
+        row.checkpoint_question_id = question.id
+    if row.completed_at is None and _is_complete(db, row, lesson):
+        row.completed_at = datetime.utcnow()
+    db.commit()
+    return {"correct": correct, **progress_of(db, student, lesson)}, None
 
 
 def student_summary(db: OrmSession, student: User) -> dict:
@@ -226,9 +282,12 @@ def progress_of(db: OrmSession, student: User, lesson: Lesson) -> dict:
     row = _row(db, student.id, lesson.id)
     if row is None:
         return {"watched_seconds": 0, "duration_seconds": 0, "position": 0,
-                "percent": 0, "completed": False, "needed_seconds": 0}
+                "percent": 0, "completed": False, "needed_seconds": 0,
+                "needs_checkpoint": False, "checkpoint_passed": False}
     duration = row.duration_seconds or 0
     percent = min(100, round(100 * row.watched_seconds / duration)) if duration else 0
+    q = checkpoint_question(db, lesson)
+    needs = bool(q) and not row.checkpoint_passed and percent >= 50
     return {
         "watched_seconds": row.watched_seconds,
         "duration_seconds": duration,
@@ -236,4 +295,6 @@ def progress_of(db: OrmSession, student: User, lesson: Lesson) -> dict:
         "percent": percent,
         "completed": row.completed_at is not None,
         "needed_seconds": max(0, int(duration * COMPLETE_RATIO) - row.watched_seconds),
+        "needs_checkpoint": needs,
+        "checkpoint_passed": bool(row.checkpoint_passed),
     }

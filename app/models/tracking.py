@@ -67,6 +67,11 @@ class VideoProgress(Base):
     watched_seconds: Mapped[int] = mapped_column(default=0)   # tổng giây đã xem (chỉ tiến)
     duration_seconds: Mapped[int] = mapped_column(default=0)  # thời lượng video
     position: Mapped[int] = mapped_column(default=0)          # vị trí xa nhất đã xem tới
+    checkpoint_passed: Mapped[bool] = mapped_column(default=False)  # đã trả lời đúng câu hỏi giữa video
+    checkpoint_tries: Mapped[int] = mapped_column(default=0)
+    checkpoint_question_id: Mapped[int | None] = mapped_column(
+        ForeignKey("questions.id"), default=None)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(),
                                                  onupdate=func.now())

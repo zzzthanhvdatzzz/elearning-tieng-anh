@@ -416,6 +416,19 @@ a.btn { color: #fff; }
   .video-dropzone:hover { background: #1b2a3c; }
 }
 
+.video-quiz { margin-top: 1rem; border: 1px solid #f0d9a8; background: #fffdf5;
+  border-radius: 14px; padding: 1rem; }
+.video-quiz-title { margin: 0 0 .5rem; font-size: .85rem; font-weight: 800; letter-spacing: .04em;
+  text-transform: uppercase; color: #8a5a00; }
+.video-quiz-q { margin: 0 0 .7rem; font-size: 1.02rem; font-weight: 600; }
+.video-quiz-options { display: grid; gap: .4rem; margin-bottom: .8rem; }
+.video-option { display: flex; gap: .5rem; align-items: flex-start; padding: .55rem .7rem;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--card); cursor: pointer;
+  font-size: .97rem; }
+.video-option:hover { border-color: var(--blue); }
+.video-option.picked { border-color: var(--blue); background: var(--blue-soft); }
+.video-option input { margin-top: .2rem; }
+
 /* ---------------------------------------------------------------- landing */
 .hero.landing { padding: 2.4rem 2rem; }
 .hero.landing h1 { font-size: 2.1rem; max-width: 22ch; }

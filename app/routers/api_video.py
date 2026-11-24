@@ -31,6 +31,24 @@ def _manage_or_403(db: OrmSession, teacher: User, lesson: Lesson) -> None:
                             detail="Chỉ giáo viên dạy khối này mới gắn được video bài giảng")
 
 
+def _options_of(question) -> list[dict]:
+    """questions.options là JSON: có thể là ["...","..."] hoặc [{"key":"A","text":"..."}]."""
+    import json
+
+    try:
+        raw = json.loads(question.options or "[]")
+    except (TypeError, ValueError):
+        raw = []
+    out = []
+    for i, item in enumerate(raw):
+        if isinstance(item, dict):
+            out.append({"key": str(item.get("key") or chr(65 + i)),
+                        "text": str(item.get("text") or "")})
+        else:
+            out.append({"key": chr(65 + i), "text": str(item)})
+    return out
+
+
 @router.get("/lessons/{lesson_id}/video")
 def lesson_video(lesson_id: int, user: User = Depends(api_user),
                  db: OrmSession = Depends(get_db)):
@@ -39,12 +57,34 @@ def lesson_video(lesson_id: int, user: User = Depends(api_user),
         raise HTTPException(status_code=403, detail="Bài học này không thuộc khối bạn học")
     progress = (video_svc.progress_of(db, user, lesson)
                 if user.role == "student" else None)
+    checkpoint = None
+    if progress and progress.get("needs_checkpoint"):
+        q = video_svc.checkpoint_question(db, lesson)
+        if q is not None:
+            checkpoint = {"question": q.prompt, "options": _options_of(q), "id": q.id}
     return {"lesson": {"id": lesson.id, "title": lesson.title}, **video_svc.info(lesson),
             "progress": progress,
+            "checkpoint": checkpoint,
             "rules": {"complete_ratio": video_svc.COMPLETE_RATIO,
+                      "checkpoint_ratio": video_svc.CHECKPOINT_RATIO,
                       "heartbeat_seconds": video_svc.HEARTBEAT_EVERY,
                       "seek_blocked": True},
             "can_manage": user.role == "teacher" and video_svc.can_manage(db, user, lesson)}
+
+
+@router.post("/lessons/{lesson_id}/video/checkpoint")
+def video_checkpoint(lesson_id: int, payload: dict,
+                     user: User = Depends(api_user), db: OrmSession = Depends(get_db)):
+    """Trả lời câu hỏi kiểm tra giữa video (bắt buộc để được tính hoàn thành)."""
+    if user.role != "student":
+        raise HTTPException(status_code=403, detail="Chỉ học sinh trả lời câu hỏi kiểm tra")
+    lesson = _lesson_or_404(db, lesson_id)
+    if not video_svc.can_view(db, user, lesson):
+        raise HTTPException(status_code=403, detail="Bài học này không thuộc khối bạn học")
+    data, error = video_svc.answer_checkpoint(db, user, lesson, str(payload.get("answer", "")))
+    if error:
+        raise HTTPException(status_code=409, detail=error)
+    return data
 
 
 @router.post("/lessons/{lesson_id}/video/heartbeat")
