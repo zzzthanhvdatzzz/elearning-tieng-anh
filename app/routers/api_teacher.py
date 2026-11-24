@@ -224,6 +224,31 @@ def class_report(class_id: int, user: User = Depends(teacher_only),
     }
 
 
+@router.get("/teacher/lessons")
+def teacher_lessons(user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
+    """Toàn bộ bài học thuộc khối giáo viên dạy + trạng thái video. Trang gắn video dùng endpoint này."""
+    from app.models import Lesson, Unit
+    from app.services import video as video_svc
+
+    grades = video_svc.grades_of_teacher(db, user)
+    if not grades:
+        return {"items": [], "grades": []}
+
+    rows = db.execute(
+        select(Lesson, Unit).join(Unit, Unit.id == Lesson.unit_id)
+        .where(Unit.grade.in_(grades)).order_by(Unit.grade, Unit.order_no, Lesson.order_no)
+    ).all()
+    items = []
+    for lesson, unit in rows:
+        v = video_svc.info(lesson)
+        items.append({
+            "id": lesson.id, "code": lesson.code, "title": lesson.title,
+            "skill": lesson.skill, "grade": unit.grade, "unit": unit.title,
+            "video_kind": v["kind"], "video_title": v["title"],
+        })
+    return {"items": items, "grades": sorted(grades)}
+
+
 @router.get("/teacher/classes")
 def teacher_classes(user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
     return {"items": [

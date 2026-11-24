@@ -12,7 +12,7 @@ type Info = {
   can_manage: boolean;
 };
 
-export default function VideoBlock({ lessonId }: { lessonId: string }) {
+export default function VideoBlock({ lessonId, onChanged }: { lessonId: string; onChanged?: () => void }) {
   const [info, setInfo] = useState<Info | null>(null);
   const [error, setError] = useState("");
   const [flash, setFlash] = useState("");
@@ -36,6 +36,7 @@ export default function VideoBlock({ lessonId }: { lessonId: string }) {
         method: "POST", body: JSON.stringify({ url: link, title }),
       });
       setFlash("Đã gắn video từ link.");
+      onChanged?.();
       setLink(""); setTitle(""); setOpenForm(false);
       load();
     } catch (err) {
@@ -58,6 +59,7 @@ export default function VideoBlock({ lessonId }: { lessonId: string }) {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new ApiError(res.status, data?.detail ?? "Tải video thất bại");
       setFlash("Đã tải video lên.");
+      onChanged?.();
       setTitle(""); setOpenForm(false);
       load();
     } catch (err) {
@@ -71,6 +73,7 @@ export default function VideoBlock({ lessonId }: { lessonId: string }) {
     try {
       await api(`/api/teacher/lessons/${lessonId}/video`, { method: "DELETE" });
       setFlash("Đã xoá video.");
+      onChanged?.();
       load();
     } catch {
       setError("Không xoá được video");

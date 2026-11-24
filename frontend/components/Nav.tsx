@@ -46,6 +46,7 @@ export default function Nav() {
                 <Link className={cls("/teacher/classes")} href="/teacher/classes">Lớp</Link>
                 <Link className={cls("/teacher/writing")} href="/teacher/writing">Chấm bài viết</Link>
                 <Link className={cls("/teacher/speaking")} href="/teacher/speaking">Chấm bài nói</Link>
+                <Link className={cls("/teacher/videos")} href="/teacher/videos">Video bài giảng</Link>
                 <Link className={cls("/teacher/parents")} href="/teacher/parents">Phụ huynh</Link>
               </>
             )}
