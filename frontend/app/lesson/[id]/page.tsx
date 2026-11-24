@@ -1,4 +1,5 @@
 import LessonView from "./LessonView";
+import VideoBlock from "@/components/VideoBlock";
 
 /**
  * Server Component: nhận `params` (Next 16 trả Promise) rồi truyền xuống client.
@@ -10,5 +11,10 @@ export const instant = false;
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <LessonView lessonId={id} />;
+  return (
+    <>
+      <VideoBlock lessonId={id} />
+      <LessonView lessonId={id} />
+    </>
+  );
 }

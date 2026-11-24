@@ -26,6 +26,10 @@ không còn nói sai về hệ thống đang chạy.
   duyệt/từ chối phụ huynh. Không lưu nội dung bài làm.
 - **Tự đổi mật khẩu**: đổi xong huỷ mọi phiên khác, giữ phiên đang thao tác.
 - **Phân trang** danh sách tài khoản; **lọc** hàng đợi chấm theo tên/email và theo lớp.
+- **Video bài giảng**: giáo viên gắn **link YouTube/Drive** (nhúng iframe) hoặc **tải video tự quay**
+  (mp4/webm/mov, tối đa 200 MB, phát bằng range request nên tua được). Quyền: giáo viên dạy khối đó
+  mới gắn/xoá; học sinh chỉ xem video của khối mình; quản trị xem được nhưng không sửa.
+  Mỗi bài chỉ có một video — gắn link sẽ thay file và ngược lại.
 - **Xuất bảng điểm lớp ra Excel** (`.xlsx`), có dòng điểm trung bình lớp.
 - **Sao lưu/khôi phục CSDL**: `scripts/backup_db.py` (dùng `sqlite3.backup`, kiểm tra toàn vẹn,
   tự sao lưu bản đang chạy trước khi khôi phục).

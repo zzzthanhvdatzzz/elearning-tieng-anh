@@ -30,6 +30,11 @@ class Lesson(Base):
     content: Mapped[str] = mapped_column(Text, default="{}")  # JSON: mục tiêu, từ vựng, ngữ pháp...
     audio_url: Mapped[str | None] = mapped_column(String(255), default=None)
     transcript: Mapped[str | None] = mapped_column(Text, default=None)
+    # Video bài giảng: hoặc link ngoài (YouTube/Drive) hoặc file giáo viên tự tải lên.
+    video_url: Mapped[str | None] = mapped_column(String(500), default=None)
+    video_path: Mapped[str | None] = mapped_column(String(500), default=None)
+    video_title: Mapped[str | None] = mapped_column(String(200), default=None)
+    video_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)
     order_no: Mapped[int] = mapped_column(default=1)
 
     unit: Mapped[Unit] = relationship(back_populates="lessons")

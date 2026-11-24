@@ -26,6 +26,30 @@ import app.models  # noqa: E402,F401  — import để Base biết toàn bộ b�
 EXPECTED = 18  # số bảng trong thiết kế hiện tại
 
 
+def add_missing_columns() -> list[str]:
+    """Thêm cột mới vào bảng đã có. SQLite chỉ cho ADD COLUMN nên phải viết tay từng cột."""
+    from sqlalchemy import text
+
+    wanted = {
+        "lessons": {
+            "video_url": "VARCHAR(500)",
+            "video_path": "VARCHAR(500)",
+            "video_title": "VARCHAR(200)",
+            "video_by": "INTEGER",
+        },
+    }
+    added: list[str] = []
+    existing = {t: {c["name"] for c in inspect(engine).get_columns(t)} for t in wanted}
+    with engine.begin() as conn:
+        for table, cols in wanted.items():
+            for col, ddl in cols.items():
+                if col in existing.get(table, set()):
+                    continue
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}"))
+                added.append(f"{table}.{col}")
+    return added
+
+
 def main() -> int:
     before = set(inspect(engine).get_table_names())
     Base.metadata.create_all(engine)
@@ -37,6 +61,13 @@ def main() -> int:
         print("Đã tạo: " + ", ".join(created))
     else:
         print("Không thiếu bảng nào.")
+
+    # create_all KHÔNG thêm cột vào bảng đã tồn tại → phải ALTER TABLE thủ công.
+    added = add_missing_columns()
+    if added:
+        print("Đã thêm cột: " + ", ".join(added))
+    else:
+        print("Không thiếu cột nào.")
 
     missing = {t.name for t in Base.metadata.sorted_tables} - after
     if missing:
