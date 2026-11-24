@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { API, api, ApiError } from "@/lib/api";
 
 type Report = {
   klass: { id: number; name: string };
@@ -66,6 +66,12 @@ export default function ReportView({ classId }: { classId: string }) {
           </table>
         )}
       </div>
+
+      <p style={{ marginTop: "1rem" }}>
+        <a className="btn ghost" href={`${API}/api/teacher/classes/${classId}/report.xlsx`}>
+          ⬇ Tải bảng điểm (.xlsx)
+        </a>
+      </p>
     </>
   );
 }

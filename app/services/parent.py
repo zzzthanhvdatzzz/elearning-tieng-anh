@@ -92,6 +92,10 @@ def decide(db: OrmSession, teacher: User, link_id: int, approve: bool) -> tuple[
                 "Liên kết với con đã được duyệt" if approve else "Yêu cầu liên kết bị từ chối",
                 "Bạn có thể xem báo cáo của con." if approve
                 else "Hãy kiểm tra lại email học sinh và gửi yêu cầu mới.")
+    from app.services import audit
+
+    audit.log(db, teacher, "parent_approve" if approve else "parent_reject",
+              f"parent_link:{link.id}", f"phụ huynh {link.parent_id} → học sinh {link.student_id}")
     db.commit()
     return True, None
 

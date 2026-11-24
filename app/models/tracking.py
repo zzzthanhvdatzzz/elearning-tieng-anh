@@ -49,3 +49,21 @@ class Notification(Base):
     body: Mapped[str] = mapped_column(Text, default="")
     is_read: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+
+class AuditLog(Base):
+    """Nhật ký hành động nhạy cảm: ai khoá tài khoản, duyệt phụ huynh, chấm/mở lại bài, import.
+
+    Không lưu nội dung bài làm, chỉ lưu *việc gì* và *ai làm* — đủ để truy trách nhiệm,
+    không thành bản sao dữ liệu học sinh (mục 1.3: quản trị không đọc nội dung gốc).
+    """
+
+    __tablename__ = "audit_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    actor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), index=True, default=None)
+    actor_email: Mapped[str] = mapped_column(String(255), default="")
+    action: Mapped[str] = mapped_column(String(48), index=True)
+    target: Mapped[str] = mapped_column(String(120), default="")
+    detail: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), index=True)

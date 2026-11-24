@@ -4,7 +4,8 @@ Tách khỏi api.py để file không dài quá 500 dòng (NFR5).
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session as OrmSession
 
@@ -13,7 +14,10 @@ from app.models import Assignment, Class, Submission, User
 from app.routers.api import api_user
 from app.services import classes as cls_svc
 from app.services import grading as grading_svc
+from app.services import speaking_queue as speaking_q
 from app.services import writing as writing_svc
+from app.services.security import get_session_user
+from app.services.storage import audio_response_path
 
 router = APIRouter(prefix="/api", tags=["api-teacher"])
 
@@ -147,6 +151,60 @@ def create_assignment(class_id: int, payload: dict = Body(...),
     return {"ok": True}
 
 
+@router.get("/teacher/classes/{class_id}/report.xlsx")
+def class_report_xlsx(class_id: int, user: User = Depends(teacher_only),
+                      db: OrmSession = Depends(get_db)):
+    """Xuất bảng điểm lớp ra Excel — để in/gửi phụ huynh hoặc nộp kèm báo cáo."""
+    import io
+
+    from fastapi.responses import StreamingResponse
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    from app.services import report as report_svc
+
+    klass = cls_svc.owned_class(db, user, class_id)
+    if klass is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp")
+    r = report_svc.class_report(db, klass)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Bang diem"
+    head = ["Học sinh", "Email", "CEFR", "Số bài đã nộp", "Điểm trung bình", "Phút học", "Cần hỗ trợ"]
+    ws.append(head)
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="35664B")
+        cell.alignment = Alignment(horizontal="center")
+
+    for row in r["rows"]:
+        student = row["student"]
+        ws.append([
+            student.full_name or student.email, student.email, student.cefr_level or "",
+            row["attempts"], row["avg"], row["minutes"], "Có" if row["needs_help"] else "",
+        ])
+    widths = [28, 30, 8, 14, 16, 12, 12]
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[chr(64 + i)].width = w
+    ws.append([])
+    ws.append(["Điểm trung bình lớp", "", "", "", r["class_avg"], "", ""])
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    # Tên tệp có dấu tiếng Việt không được đặt thẳng vào header (latin-1) → dùng RFC 5987
+    from urllib.parse import quote
+
+    ascii_name = f"bang-diem-lop-{klass.id}.xlsx"
+    pretty = f"bang-diem-{klass.name.replace(' ', '-')}.xlsx"
+    return StreamingResponse(
+        buf, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition":
+                 f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(pretty)}"},
+    )
+
+
 @router.get("/teacher/classes/{class_id}/report")
 def class_report(class_id: int, user: User = Depends(teacher_only),
                  db: OrmSession = Depends(get_db)):
@@ -176,16 +234,22 @@ def teacher_classes(user: User = Depends(teacher_only), db: OrmSession = Depends
 
 
 @router.get("/teacher/submissions")
-def teacher_queue(kind: str = "writing", user: User = Depends(teacher_only),
-                  db: OrmSession = Depends(get_db)):
+def teacher_queue(kind: str = "writing", q: str = "", class_id: int | None = None,
+                  user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
+    """Hàng đợi chấm. Lọc theo tên/email học sinh và theo lớp (q, class_id)."""
     rows = []
     if kind == "writing":
         queue = writing_svc.teacher_queue(db, user)
     else:
         queue = []
+    needle = q.strip().lower()
     for s in queue:
         assignment = db.get(Assignment, s.assignment_id)
         student = db.get(User, s.student_id)
+        if class_id is not None and (assignment is None or assignment.class_id != class_id):
+            continue
+        if needle and needle not in ((student.full_name or "") + " " + (student.email or "")).lower():
+            continue
         rows.append({
             "id": s.id, "student": student.full_name or student.email if student else "",
             "title": assignment.title if assignment else "",
@@ -218,11 +282,79 @@ def submission_detail(submission_id: int, user: User = Depends(teacher_only),
 def grade(submission_id: int, payload: dict = Body(...),
           user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
     sub = _owned(db, user, submission_id)
-    rubric = {c: float(payload.get(c, 0)) for c in grading_svc.RUBRIC_CRITERIA}
+    rubric = {c: float(payload[c]) for c in grading_svc.RUBRIC_CRITERIA if c in payload}
     graded, error = grading_svc.grade_writing(db, sub, rubric, user, str(payload.get("comment", "")))
     if error:
         raise HTTPException(status_code=422, detail=error)
     return {"ok": True, "final_score": graded.final_score, "teacher_score": graded.teacher_score}
+
+
+# ------------------------------------------------------------------ chấm bài nói
+
+
+@router.get("/teacher/speaking")
+def speaking_queue(only_pending: bool = True, user: User = Depends(teacher_only),
+                   db: OrmSession = Depends(get_db)):
+    return {"items": speaking_q.queue(db, user, only_pending=only_pending),
+            "labels": grading_svc.SPEAKING_LABELS}
+
+
+@router.get("/teacher/speaking/{submission_id}")
+def speaking_detail(submission_id: int, user: User = Depends(teacher_only),
+                    db: OrmSession = Depends(get_db)):
+    data = speaking_q.detail(db, user, submission_id)
+    if data is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy bài nói của lớp bạn")
+    return {**data,
+            "criteria": grading_svc.SPEAKING_CRITERIA,
+            "labels": grading_svc.SPEAKING_LABELS,
+            "rubric": grading_svc.rubric_of(db, submission_id),
+            "feedback": grading_svc.feedback_of(db, submission_id)}
+
+
+@router.post("/teacher/speaking/{submission_id}/grade")
+def speaking_grade(submission_id: int, payload: dict = Body(...),
+                   user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
+    sub = _owned(db, user, submission_id)
+    # Chỉ lấy tiêu chí giáo viên thực sự gửi lên: thiếu tiêu chí phải bị từ chối,
+    # KHÔNG tự điền 0 (nếu điền 0 thì bài bị trừ điểm mà không ai biết vì sao).
+    rubric = {c: float(payload[c]) for c in grading_svc.SPEAKING_CRITERIA if c in payload}
+    graded, error = grading_svc.grade_speaking(db, sub, rubric, user,
+                                               str(payload.get("comment", "")))
+    if error:
+        raise HTTPException(status_code=422, detail=error)
+    return {"ok": True, "final_score": graded.final_score, "teacher_score": graded.teacher_score}
+
+
+@router.post("/teacher/submissions/{submission_id}/reopen")
+def reopen_submission(submission_id: int, payload: dict = Body(...),
+                      user: User = Depends(teacher_only), db: OrmSession = Depends(get_db)):
+    sub = _owned(db, user, submission_id)
+    ok, error = grading_svc.reopen(db, sub, user, str(payload.get("reason", "")))
+    if not ok:
+        raise HTTPException(status_code=422, detail=error)
+    return {"ok": True}
+
+
+@router.get("/submissions/{submission_id}/audio")
+def submission_audio(submission_id: int, request: Request, db: OrmSession = Depends(get_db)):
+    """Nghe lại bài nói. Quyền: chính chủ hoặc giáo viên lớp đó — quản trị KHÔNG được nghe."""
+    user = get_session_user(db, request.cookies.get("sid"))
+    if user is None:
+        raise HTTPException(status_code=401, detail="Chưa đăng nhập")
+
+    sub = db.get(Submission, submission_id)
+    if sub is None or not sub.audio_path:
+        raise HTTPException(status_code=404, detail="Không có file ghi âm")
+
+    allowed = sub.student_id == user.id or grading_svc.can_grade(db, user, sub)
+    if not allowed:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền nghe bài này")
+
+    path = audio_response_path(sub.audio_path)
+    if not path.exists():
+        raise HTTPException(status_code=410, detail="File ghi âm đã bị xoá theo quy định lưu trữ")
+    return FileResponse(path, filename=path.name)
 
 
 # ------------------------------------------------------------------ học sinh: bài viết

@@ -22,10 +22,11 @@ export default function TeacherWritingPage() {
   const [comment, setComment] = useState("");
   const [error, setError] = useState("");
   const [flash, setFlash] = useState("");
+  const [q, setQ] = useState("");
 
   async function load() {
     try {
-      const d = await api<{ items: Row[] }>("/api/teacher/submissions");
+      const d = await api<{ items: Row[] }>(`/api/teacher/submissions?q=${encodeURIComponent(q)}`);
       setRows(d.items);
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) router.replace("/login");
@@ -34,7 +35,7 @@ export default function TeacherWritingPage() {
     }
   }
 
-  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, [q]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function openSubmission(id: number) {
     setFlash("");

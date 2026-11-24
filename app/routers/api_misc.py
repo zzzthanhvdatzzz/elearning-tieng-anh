@@ -147,6 +147,19 @@ def student_report(student_id: int, user: User = Depends(api_user),
 # ------------------------------------------------------------------ quản trị
 
 
+@router.get("/admin/audit")
+def admin_audit(action: str = "", limit: int = 100, user: User = Depends(role_only("admin")),
+                db: OrmSession = Depends(get_db)):
+    from app.services import audit as audit_svc
+
+    rows = audit_svc.recent(db, limit=max(1, min(500, limit)), action=action)
+    return {"items": [{"id": r.id, "at": r.created_at.strftime("%d/%m/%Y %H:%M"),
+                       "actor": r.actor_email, "action": r.action,
+                       "action_label": audit_svc.ACTIONS.get(r.action, r.action),
+                       "target": r.target, "detail": r.detail} for r in rows],
+            "actions": audit_svc.ACTIONS}
+
+
 @router.get("/admin/users")
 def admin_users(role: str = "", q: str = "", page: int = 1, size: int = 20,
                 user: User = Depends(role_only("admin")), db: OrmSession = Depends(get_db)):

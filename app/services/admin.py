@@ -50,7 +50,8 @@ def create_user(db: OrmSession, email: str, full_name: str, role: str,
     return user, None
 
 
-def set_active(db: OrmSession, user_id: int, active: bool) -> tuple[User | None, str | None]:
+def set_active(db: OrmSession, user_id: int, active: bool,
+               actor: "User | None" = None) -> tuple[User | None, str | None]:
     user = db.get(User, user_id)
     if user is None:
         return None, "Không tìm thấy tài khoản."
@@ -59,6 +60,11 @@ def set_active(db: OrmSession, user_id: int, active: bool) -> tuple[User | None,
     if not active:
         # US2/AC2: khoá tài khoản thì mọi phiên đang mở phải chết ngay
         revoke_all_sessions(db, user_id)
+    from app.services import audit
+
+    audit.log(db, actor, "user_unlock" if active else "user_lock",
+              f"user:{user_id}", f"{user.email} · {user.role}")
+    db.commit()
     return user, None
 
 

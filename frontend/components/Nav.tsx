@@ -44,7 +44,8 @@ export default function Nav() {
             {me.role === "teacher" && (
               <>
                 <Link className={cls("/teacher/classes")} href="/teacher/classes">Lớp</Link>
-                <Link className={cls("/teacher/writing")} href="/teacher/writing">Chấm bài</Link>
+                <Link className={cls("/teacher/writing")} href="/teacher/writing">Chấm bài viết</Link>
+                <Link className={cls("/teacher/speaking")} href="/teacher/speaking">Chấm bài nói</Link>
                 <Link className={cls("/teacher/parents")} href="/teacher/parents">Phụ huynh</Link>
               </>
             )}
@@ -53,6 +54,7 @@ export default function Nav() {
               <>
                 <Link className={cls("/admin/users")} href="/admin/users">Tài khoản</Link>
                 <Link className={cls("/admin/import")} href="/admin/import">Import</Link>
+                <Link className={cls("/admin/audit")} href="/admin/audit">Nhật ký</Link>
               </>
             )}
             <Link className={cls("/settings/password")} href="/settings/password">Mật khẩu</Link>
