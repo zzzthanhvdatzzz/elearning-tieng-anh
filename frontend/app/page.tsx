@@ -17,15 +17,15 @@ export default function Home() {
 
   return (
     <>
-      <section className="hero landing">
-        <h1>Học tiếng Anh theo bốn kỹ năng — và thấy được tiến bộ mỗi tuần</h1>
+      <section className="meadow">
+        <h1>Học tiếng Anh <em>qua bốn kỹ năng.</em></h1>
         <p>
           Hệ thống luyện nghe – nói – đọc – viết cho học sinh THCS và THPT. Bài tập chấm ngay,
           giáo viên chấm bài viết theo rubric, phụ huynh nhận báo cáo tuần.
         </p>
         <p className="cta">
-          <Link className="btn on-dark" href="/login">Đăng nhập</Link>
-          <Link className="btn ghost-light" href="/register">Đăng ký bằng mã lớp</Link>
+          <Link className="btn" href="/login">Đăng nhập</Link>
+          <Link href="/register">Đăng ký bằng mã lớp →</Link>
         </p>
       </section>
 

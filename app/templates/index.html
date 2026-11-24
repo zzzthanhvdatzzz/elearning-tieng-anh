@@ -1,15 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Trang chủ{% endblock %}
 {% block content %}
-<h1>Học tiếng Anh trực tuyến</h1>
-<p class="lead">Bốn kỹ năng nghe – nói – đọc – viết, chấm ngay, có phản hồi cho giáo viên và phụ huynh.</p>
+<section class="meadow">
+  <div><h1>Học tiếng Anh <em>qua bốn kỹ năng.</em></h1>
+  <p>Luyện nghe, nói, đọc và viết theo lộ trình của lớp. Xem kết quả và phản hồi từ giáo viên sau mỗi bài học.</p>
+  <p class="cta">{% if user %}<a class="btn" href="/me">Vào trang của tôi →</a>{% else %}<a class="btn" href="/auth/login">Đăng nhập</a><a href="/auth/register">Đăng ký bằng mã lớp →</a>{% endif %}</p></div>
+</section>
+<section class="steps" aria-label="Lộ trình học">
+  <article class="card step"><h2>Kiểm tra đầu vào</h2><p>Làm bài trắc nghiệm và bài viết để giáo viên xác nhận trình độ của bạn.</p></article>
+  <article class="card step"><h2>Học và luyện mỗi ngày</h2><p>Học theo từng Unit, luyện nghe, ghi âm bài nói và nộp bài viết.</p></article>
+  <article class="card step"><h2>Theo dõi tiến bộ</h2><p>Xem điểm và phản hồi của giáo viên để chọn kỹ năng cần luyện thêm.</p></article>
+</section>
 <div class="card">
-  <h2>Bắt đầu</h2>
+  <h2>Tài khoản của bạn</h2>
   {% if user %}
     <p>Xin chào <strong>{{ user.full_name or user.email }}</strong>.</p>
-    <p><a class="btn" href="/me">Vào trang của tôi</a></p>
   {% else %}
-    <p><a class="btn" href="/auth/login">Đăng nhập</a> <a href="/auth/register">hoặc đăng ký bằng mã lớp</a></p>
     <p class="muted">Phụ huynh: <a href="/auth/register-parent">tạo tài khoản để xem báo cáo của con</a></p>
   {% endif %}
 </div>
