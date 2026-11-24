@@ -51,6 +51,27 @@ class Notification(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
 
+class VideoProgress(Base):
+    """Tiến độ xem video bài giảng.
+
+    Chỉ cộng phần thời gian THỰC SỰ xem (client gửi nhịp tim), không cộng cú nhảy tua.
+    Hoàn thành khi đã xem ≥ 80% thời lượng (quy tắc của nhóm).
+    """
+
+    __tablename__ = "video_progress"
+    __table_args__ = (UniqueConstraint("student_id", "lesson_id", name="uq_video_progress"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    lesson_id: Mapped[int] = mapped_column(ForeignKey("lessons.id", ondelete="CASCADE"), index=True)
+    watched_seconds: Mapped[int] = mapped_column(default=0)   # tổng giây đã xem (chỉ tiến)
+    duration_seconds: Mapped[int] = mapped_column(default=0)  # thời lượng video
+    position: Mapped[int] = mapped_column(default=0)          # vị trí xa nhất đã xem tới
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, default=None)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(),
+                                                 onupdate=func.now())
+
+
 class AuditLog(Base):
     """Nhật ký hành động nhạy cảm: ai khoá tài khoản, duyệt phụ huynh, chấm/mở lại bài, import.
 

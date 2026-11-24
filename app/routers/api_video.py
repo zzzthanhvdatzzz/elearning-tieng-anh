@@ -37,8 +37,38 @@ def lesson_video(lesson_id: int, user: User = Depends(api_user),
     lesson = _lesson_or_404(db, lesson_id)
     if not video_svc.can_view(db, user, lesson):
         raise HTTPException(status_code=403, detail="Bài học này không thuộc khối bạn học")
+    progress = (video_svc.progress_of(db, user, lesson)
+                if user.role == "student" else None)
     return {"lesson": {"id": lesson.id, "title": lesson.title}, **video_svc.info(lesson),
+            "progress": progress,
+            "rules": {"complete_ratio": video_svc.COMPLETE_RATIO,
+                      "heartbeat_seconds": video_svc.HEARTBEAT_EVERY,
+                      "seek_blocked": True},
             "can_manage": user.role == "teacher" and video_svc.can_manage(db, user, lesson)}
+
+
+@router.post("/lessons/{lesson_id}/video/heartbeat")
+def video_heartbeat(lesson_id: int, payload: dict,
+                    user: User = Depends(api_user), db: OrmSession = Depends(get_db)):
+    """Client gửi mỗi ~10 giây. Server chỉ cộng phần xem thật, không cộng cú tua."""
+    if user.role != "student":
+        raise HTTPException(status_code=403, detail="Chỉ học sinh có tiến độ xem video")
+    lesson = _lesson_or_404(db, lesson_id)
+    if not video_svc.can_view(db, user, lesson):
+        raise HTTPException(status_code=403, detail="Bài học này không thuộc khối bạn học")
+    if video_svc.info(lesson)["kind"] is None:
+        raise HTTPException(status_code=409, detail="Bài học chưa có video")
+
+    try:
+        position = float(payload.get("position", 0))
+        duration = float(payload.get("duration", 0))
+    except (TypeError, ValueError):
+        raise HTTPException(status_code=422, detail="position/duration phải là số")
+
+    data, error = video_svc.record_heartbeat(db, user, lesson, position, duration)
+    if error:
+        raise HTTPException(status_code=422, detail=error)
+    return data
 
 
 @router.get("/lessons/{lesson_id}/video/stream")

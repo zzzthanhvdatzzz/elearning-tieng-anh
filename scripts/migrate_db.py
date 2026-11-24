@@ -23,7 +23,7 @@ from sqlalchemy import inspect  # noqa: E402
 from app.db import Base, engine  # noqa: E402
 import app.models  # noqa: E402,F401  — import để Base biết toàn bộ bảng
 
-EXPECTED = 18  # số bảng trong thiết kế hiện tại
+EXPECTED = 19  # số bảng trong thiết kế hiện tại (thêm video_progress)
 
 
 def add_missing_columns() -> list[str]:

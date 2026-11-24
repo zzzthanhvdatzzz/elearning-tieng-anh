@@ -120,3 +120,76 @@ def info(lesson: Lesson) -> dict:
                 "title": lesson.video_title or "",
                 "stream": f"/api/lessons/{lesson.id}/video/stream"}
     return {"kind": None, "embed_url": None, "title": "", "stream": None}
+
+
+# ------------------------------------------------------------------ theo dõi đã xem
+COMPLETE_RATIO = 0.8          # xem ≥ 80% thời lượng mới tính hoàn thành
+MAX_HEARTBEAT_DELTA = 20      # một nhịp tim chỉ được cộng tối đa 20 giây (chặn nhảy cóc)
+HEARTBEAT_EVERY = 10          # client gửi mỗi 10 giây
+
+
+def _row(db: OrmSession, student_id: int, lesson_id: int):
+    from app.models import VideoProgress
+
+    return db.execute(
+        select(VideoProgress).where(VideoProgress.student_id == student_id,
+                                    VideoProgress.lesson_id == lesson_id)
+    ).scalar_one_or_none()
+
+
+def record_heartbeat(db: OrmSession, student: User, lesson: Lesson, position: float,
+                     duration: float) -> tuple[dict | None, str | None]:
+    """Ghi nhận một nhịp xem. Chỉ cộng phần CHÊNH LỆCH HỢP LỆ, không cộng cú tua.
+
+    Quy tắc chống tua:
+    - delta = vị_trí_mới − vị_trí_xa_nhất_đã_xem; nếu delta < 0 (tua lùi) → không cộng.
+    - nếu delta > MAX_HEARTBEAT_DELTA (tua tới) → chỉ cộng MAX_HEARTBEAT_DELTA, và KHÔNG
+      dời mốc `position` theo cú tua (người học phải xem tiếp từ chỗ cũ).
+    """
+    from datetime import datetime
+
+    from app.models import VideoProgress
+
+    if duration <= 0:
+        return None, "Thiếu thời lượng video."
+    if position < 0:
+        position = 0
+    duration = int(round(duration))
+    position = int(round(position))
+
+    row = _row(db, student.id, lesson.id)
+    if row is None:
+        row = VideoProgress(student_id=student.id, lesson_id=lesson.id,
+                            watched_seconds=0, duration_seconds=duration, position=0)
+        db.add(row)
+        db.flush()
+
+    delta = position - row.position
+    if delta > 0:
+        credited = min(delta, MAX_HEARTBEAT_DELTA)
+        row.watched_seconds = min(row.watched_seconds + credited, duration * 2)
+        row.position = min(row.position + credited, duration)
+    row.duration_seconds = duration or row.duration_seconds
+
+    target = row.duration_seconds * COMPLETE_RATIO
+    if row.completed_at is None and row.watched_seconds >= target:
+        row.completed_at = datetime.utcnow()
+    db.commit()
+    return progress_of(db, student, lesson), None
+
+
+def progress_of(db: OrmSession, student: User, lesson: Lesson) -> dict:
+    row = _row(db, student.id, lesson.id)
+    if row is None:
+        return {"watched_seconds": 0, "duration_seconds": 0, "position": 0,
+                "percent": 0, "completed": False, "needed_seconds": 0}
+    duration = row.duration_seconds or 0
+    percent = min(100, round(100 * row.watched_seconds / duration)) if duration else 0
+    return {
+        "watched_seconds": row.watched_seconds,
+        "duration_seconds": duration,
+        "position": row.position,
+        "percent": percent,
+        "completed": row.completed_at is not None,
+        "needed_seconds": max(0, int(duration * COMPLETE_RATIO) - row.watched_seconds),
+    }

@@ -30,6 +30,11 @@ không còn nói sai về hệ thống đang chạy.
   (mp4/webm/mov, tối đa 200 MB, phát bằng range request nên tua được). Quyền: giáo viên dạy khối đó
   mới gắn/xoá; học sinh chỉ xem video của khối mình; quản trị xem được nhưng không sửa.
   Mỗi bài chỉ có một video — gắn link sẽ thay file và ngược lại.
+- **Chống tua khi học video (video tải lên)**: học sinh không kéo được thanh tua vượt vị trí đã xem
+  (client kéo về chỗ cũ); server chỉ cộng phần chênh lệch hợp lệ mỗi nhịp 10 giây, tối đa 20 giây,
+  nên gọi API bằng tay cũng không nhảy cóc. **Hoàn thành khi đã xem ≥ 80% thời lượng** (bảng
+  `video_progress`). Video nhúng YouTube/Drive **không** chặn tua được và không đo được thời lượng —
+  muốn tính hoàn thành thì phải tải video lên hệ thống (đã ghi rõ trên giao diện).
 - **Xuất bảng điểm lớp ra Excel** (`.xlsx`), có dòng điểm trung bình lớp.
 - **Sao lưu/khôi phục CSDL**: `scripts/backup_db.py` (dùng `sqlite3.backup`, kiểm tra toàn vẹn,
   tự sao lưu bản đang chạy trước khi khôi phục).
