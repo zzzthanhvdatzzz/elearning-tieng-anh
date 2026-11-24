@@ -41,6 +41,8 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "→ Backend  http://localhost:$API_PORT   (--reload: sửa Python là tự nạp lại)"
+# Tạo bảng còn thiếu trước khi chạy: thiếu bảng mới (vd audit_logs) thì API mới trả 500
+"$PY" scripts/migrate_db.py || true
 "$PY" -m uvicorn app.main:app --port "$API_PORT" --reload &
 API_PID=$!
 

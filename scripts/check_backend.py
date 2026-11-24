@@ -42,10 +42,42 @@ REQUIRED = [
     ("GET", "/api/teacher/parent-requests"),
     ("POST", "/api/teacher/parent-requests/{link_id}"),
     ("GET", "/api/teacher/submissions"),
+    ("GET", "/api/submissions/{submission_id}/audio"),
+    ("GET", "/api/teacher/speaking"),
+    ("POST", "/api/teacher/speaking/{submission_id}/grade"),
+    ("POST", "/api/teacher/submissions/{submission_id}/reopen"),
+    ("GET", "/api/teacher/classes/{class_id}/report.xlsx"),
+    ("GET", "/api/admin/audit"),
     ("GET", "/api/admin/users"),
     ("POST", "/api/admin/users"),
     ("POST", "/api/admin/import-upload"),
 ]
+
+
+REQUIRED_TABLES = 18  # thiết kế hiện tại; thiếu bảng mới → API mới trả 500 "no such table"
+
+
+def check_tables() -> list[str]:
+    """So số bảng trong CSDL SQLite với thiết kế. Bắt lỗi 'quên migrate' — đã lọt qua một lần."""
+    import sqlite3
+    from pathlib import Path
+
+    db = Path(__file__).resolve().parent.parent / "data" / "app.db"
+    if not db.exists():
+        return []
+    con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+    try:
+        names = {r[0] for r in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")}
+    finally:
+        con.close()
+    problems = []
+    if len(names) < REQUIRED_TABLES:
+        problems.append(f"CSDL chỉ có {len(names)}/{REQUIRED_TABLES} bảng — chạy: "
+                        f".venv/bin/python scripts/migrate_db.py")
+    if "audit_logs" not in names:
+        problems.append("thiếu bảng audit_logs (trang Nhật ký sẽ 500)")
+    return problems
 
 
 def main() -> int:
@@ -58,12 +90,17 @@ def main() -> int:
 
     have = {(m.upper(), path) for path, ops in spec.get("paths", {}).items() for m in ops}
     missing = [f"{m} {p}" for m, p in REQUIRED if (m, p) not in have]
+    table_problems = check_tables()
 
     print(f"Backend: {BASE}")
     print(f"Tổng route: {len(have)}")
+    if table_problems:
+        print("VẤN ĐỀ CSDL:")
+        for p in table_problems:
+            print(f"  • {p}")
     if not missing:
         print("ĐỦ route cho giao diện Next — không thiếu gì.")
-        return 0
+        return 1 if table_problems else 0
 
     print(f"THIẾU {len(missing)} route:")
     for item in missing:
