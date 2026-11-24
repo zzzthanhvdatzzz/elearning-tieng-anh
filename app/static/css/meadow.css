@@ -1,4 +1,7 @@
-/* Meadowbell landscape and EnglishHub controls */
+/* BẢN SINH TỰ ĐỘNG từ frontend/app/meadow.css — chạy scripts/sync_meadow_css.py, đừng sửa tay. */
+/* Meadowbell landscape and EnglishHub controls
+   Ảnh nằm trong frontend/public/static/img/meadow/ (tự lưu, không phụ thuộc CDN ngoài).
+   Bản cho trang Jinja được sinh từ file này bằng scripts/sync_meadow_css.py — đừng sửa tay bản đó. */
 @media (prefers-color-scheme: light), (prefers-color-scheme: no-preference) {
   :root { --bg:#f2f7ee; --ink:#223a32; --blue:#35664b; --blue-dark:#284f39; --blue-soft:#e4f1df; --line:#d6e2d3; }
   body { background:#f2f7ee; }
@@ -12,7 +15,7 @@
   position:relative; isolation:isolate; overflow:hidden; text-align:center;
   border-radius:28px; color:white; min-height:clamp(520px,65vw,700px);
   padding:clamp(2rem,5vw,4rem) 1.2rem 12rem;
-  background:#28577b url("https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/3ca5d10d-ea2f-4907-876f-33bde169469e.jpg") center 68% / cover;
+  background:#28577b url("/static/img/meadow/hero.jpg") center 68% / cover;
 }
 .meadow::before { content:""; position:absolute; inset:0; z-index:-1; background:linear-gradient(180deg,#18395dc9,#173d688c 48%,transparent 78%); }
 .meadow h1 { margin:0 auto 1rem; color:white; font:850 clamp(2.6rem,6vw,5rem)/1.04 ui-rounded,system-ui,sans-serif; letter-spacing:-.045em; }
@@ -22,11 +25,63 @@
 .meadow .cta a { display:inline-flex; align-items:center; padding:.65rem 1.1rem; border-radius:100px; background:#214e40; color:white; font-weight:650; text-decoration:none; }
 .meadow .cta .btn { background:white; color:#315c40; }
 .step::before { content:""; height:108px; border-radius:10px; margin-bottom:.65rem; background-position:center; background-size:cover; }
-.step:nth-child(1)::before { background-image:url("https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/cd2d844f-ae3f-4fa9-8067-b077530b6e71.webp"); }
-.step:nth-child(2)::before { background-image:url("https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/48f5b97e-c27c-4afd-9427-eb35aebd1751.webp"); }
-.step:nth-child(3)::before { background-image:url("https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/cde5384e-ce4d-423f-925a-451b779066e0.webp"); }
+.step:nth-child(1)::before { background-image:url("/static/img/meadow/step-1.webp"); }
+.step:nth-child(2)::before { background-image:url("/static/img/meadow/step-2.webp"); }
+.step:nth-child(3)::before { background-image:url("/static/img/meadow/step-3.webp"); }
 @media(max-width:600px) { .meadow { border-radius:18px; background-position:25% center; } }
-.steps { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:1rem; margin:1.25rem 0; }
-.steps .step { display:flex; flex-direction:column; margin:0; }
-.step h2 { font-size:1.18rem; margin:.25rem 0; }
-.step p { margin:.25rem 0; color:var(--muted); }
+
+/* Shared surfaces also follow Meadowbell on signed-in pages. */
+:root {
+  --ink:#223a32; --ink-2:#304a40; --muted:#3c5548;
+  --blue:#35664b; --blue-dark:#284f39; --blue-soft:#e4f1df;
+  --bg:#f2f7ee; --card:#fdfff9; --line:#d6e2d3; --line-2:#e4ece0;
+}
+body { background:var(--bg); }
+.topbar { background:rgba(251,255,248,.96); }
+.topbar nav a.active, .avatar { background:var(--blue-soft); color:var(--blue-dark); }
+.hero { background:#315d48; }
+.hero .muted { color:#e1efdf; }
+.stat-card { background:var(--card); border-radius:20px; padding:1.4rem; }
+.stat-card::before { background:#83aa69; }
+.stat-value { color:var(--ink); font-size:2.3rem; }
+.stat-label { color:var(--muted); }
+.table { background:var(--card); }
+.table th { background:var(--blue-soft); color:var(--ink); }
+.table td { background:var(--card); color:var(--ink); }
+.who, .transcript, .explain { background:var(--blue-soft); }
+.form input, .form select, .form textarea { background:var(--card); color:var(--ink); }
+.nextup { background:var(--card); }
+.skill { color:var(--blue-dark); }
+.dashboard-welcome {
+  position:relative; isolation:isolate; overflow:hidden;
+  display:flex; align-items:center; min-height:290px;
+  padding:clamp(1.5rem,4vw,3rem); margin-bottom:1.6rem; border-radius:26px;
+  background:#427ca0 url("/static/img/meadow/hero.jpg") center 55% / cover;
+  color:white;
+}
+.dashboard-welcome::before {
+  content:""; position:absolute; inset:0; z-index:-1;
+  background:linear-gradient(90deg,rgba(16,50,58,.92),rgba(16,50,58,.65) 55%,rgba(16,50,58,.08));
+}
+.dashboard-greeting { max-width:75%; }
+.dashboard-welcome h1 { font-size:clamp(1.8rem,3.5vw,2.8rem); letter-spacing:-.04em; margin:.65rem 0; }
+.dashboard-welcome .muted { color:#edf8e8; font-weight:500; }
+.dashboard-label { font-size:.85rem; font-weight:700; letter-spacing:.04em; color:#e6f4d4; }
+.dashboard-actions .action { border-left:0; border-top:4px solid #87ab71; padding:1.5rem; }
+.dashboard-actions .action:nth-child(2) { border-top-color:#c9996a; }
+.dashboard-actions .action:nth-child(3) { border-top-color:#809db2; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline:3px solid #b88b42; outline-offset:4px; }
+@media (max-width:600px) {
+  .dashboard-welcome { min-height:250px; background-position:35% center; }
+  .dashboard-greeting { max-width:100%; }
+  .topbar nav { justify-content:flex-start; }
+}
+@media (prefers-color-scheme:dark) {
+  :root {
+    --ink:#edf5e9; --ink-2:#d2e0cf; --muted:#b5c8b3;
+    --blue:#b2d89c; --blue-dark:#c9e9b6; --blue-soft:#263e32;
+    --bg:#12231d; --card:#1b3026; --line:#3b5242; --line-2:#304737;
+  }
+  .topbar { background:rgba(20,40,31,.96); }
+  .opt:hover { background:#263e32; }
+}
