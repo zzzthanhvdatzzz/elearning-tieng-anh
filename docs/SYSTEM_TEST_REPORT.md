@@ -4,8 +4,8 @@
 |---|---|
 | Ngày chạy | 24/11/2026 |
 | Lệnh | `.venv/bin/python -m pytest -q` |
-| Kết quả | **158 passed, 0 failed** (xem mục 5 để biết cách tái lập) |
-| Thời gian | 567 giây (9 phút 27 giây), máy i7-6820HQ |
+| Kết quả | **164 passed, 0 failed** (xem mục 5 để biết cách tái lập) |
+| Thời gian | 592 giây (9 phút 52 giây), máy i7-6820HQ |
 | Môi trường | Python 3.11.16, SQLite, `DISABLE_JOBS=1` |
 | Build giao diện | `npm run build` (Next 16.4.6) — thành công, 24 route |
 | UAT tự động | `scripts/run_uat.py` — **39/39 PASS** (`docs/UAT_RESULT.md`) |
@@ -36,10 +36,11 @@
 | `test_export_backup.py` | 5 | Xuất Excel bảng điểm, sao lưu/khôi phục CSDL, lọc hàng đợi |
 | `test_smtp.py` | 3 | Gửi email thật (SMTP giả lập): gọi send_message, lỗi ghi `failed` |
 | `test_video.py` | 8 | Video: link YouTube/Drive, tải file, phân quyền khối, xoá |
-| `test_video_progress.py` | 7 | Chống tua (tối đa 20s/nhịp), hoàn thành khi ≥80%, cách ly |
-| `test_video_report.py` | 4 | Video nối vào dashboard + báo cáo học sinh/phụ huynh |
+| `test_video_progress.py` | 7 | Chống tua + chống bắn request liên tục, ngưỡng 80%, cách ly |
+| `test_video_checkpoint.py` | 5 | Câu hỏi kiểm tra mốc 50%: sai chưa hoàn thành, đúng mới xong, không lộ đáp án |
+| `test_video_report.py` | 5 | Video nối vào dashboard + báo cáo học sinh/phụ huynh |
 | `test_theme_sync.py` | 4 | CSS Jinja khớp bản Next, không hotlink ảnh ngoài, ảnh tồn tại |
-| **Tổng** | **158** | |
+| **Tổng** | **164** | |
 
 ## 2. Kiểm chứng thủ công đã chạy (có log, không phải mô tả)
 
