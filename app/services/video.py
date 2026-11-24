@@ -178,6 +178,50 @@ def record_heartbeat(db: OrmSession, student: User, lesson: Lesson, position: fl
     return progress_of(db, student, lesson), None
 
 
+def student_summary(db: OrmSession, student: User) -> dict:
+    """Tổng hợp video cho học sinh: bao nhiêu bài có video, đã xem xong bao nhiêu, tổng giây.
+
+    Dùng cho trang tổng quan và báo cáo — trước đây bảng video_progress có dữ liệu nhưng
+    không nơi nào đọc, nên xem video xong hệ thống vẫn báo "chưa học gì".
+    """
+    from app.models import VideoProgress
+
+    grades = grades_of_student(db, student)
+    if not grades:
+        return {"videos_total": 0, "videos_completed": 0, "watched_seconds": 0,
+                "percent": 0, "items": []}
+
+    lessons = list(db.execute(
+        select(Lesson).join(Unit, Unit.id == Lesson.unit_id).where(Unit.grade.in_(grades))
+    ).scalars())
+    with_video = [ls for ls in lessons if ls.video_url or ls.video_path]
+    ids = [ls.id for ls in with_video]
+
+    rows = {}
+    if ids:
+        for row in db.execute(select(VideoProgress).where(
+                VideoProgress.student_id == student.id,
+                VideoProgress.lesson_id.in_(ids))).scalars():
+            rows[row.lesson_id] = row
+
+    completed = [ls for ls in with_video if rows.get(ls.id) and rows[ls.id].completed_at]
+    watched = sum(r.watched_seconds for lid, r in rows.items() if lid in ids)
+    return {
+        "videos_total": len(with_video),
+        "videos_completed": len(completed),
+        "watched_seconds": watched,
+        "percent": round(100 * len(completed) / len(with_video)) if with_video else 0,
+        "items": [
+            {"lesson_id": ls.id, "title": ls.title,
+             "percent": min(100, round(100 * rows[ls.id].watched_seconds
+                                       / rows[ls.id].duration_seconds))
+             if rows.get(ls.id) and rows[ls.id].duration_seconds else 0,
+             "completed": bool(rows.get(ls.id) and rows[ls.id].completed_at)}
+            for ls in with_video
+        ],
+    }
+
+
 def progress_of(db: OrmSession, student: User, lesson: Lesson) -> dict:
     row = _row(db, student.id, lesson.id)
     if row is None:

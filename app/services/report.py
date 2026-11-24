@@ -55,6 +55,17 @@ def _minutes(db: OrmSession, student_id: int) -> int:
     return round(sum(p.seconds for p in rows) / 60)
 
 
+def _videos(db: OrmSession, student) -> dict:
+    """Video đã xem — nối bảng video_progress vào báo cáo (trước đây dữ liệu nằm chết)."""
+    from app.services import video as video_svc
+
+    try:
+        s = video_svc.student_summary(db, student)
+    except Exception:  # noqa: BLE001 - báo cáo không được chết vì phần phụ
+        return {"videos_total": 0, "videos_completed": 0, "watched_seconds": 0, "percent": 0}
+    return {k: s[k] for k in ("videos_total", "videos_completed", "watched_seconds", "percent")}
+
+
 def _weekly(db: OrmSession, student_id: int, weeks: int = 6) -> list[dict]:
     """Số phút học theo tuần (dựa trên last_seen_at của progress).
 
@@ -96,6 +107,7 @@ def student_report(db: OrmSession, student: User) -> dict:
         "skills": skills,
         "weakest": weak[0] if weak else None,
         "minutes": _minutes(db, student.id),
+        "videos": _videos(db, student),
         "weekly": _weekly(db, student.id),
         "submissions": _submissions(db, student.id),
         "progress": db.execute(

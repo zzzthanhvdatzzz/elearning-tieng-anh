@@ -16,6 +16,7 @@ from app.models import Assignment, Class, Enrollment, ParentLink, Submission, Us
 from app.routers.api import api_user
 from app.services import assignments as asg_svc
 from app.services import learning as learning_svc
+from app.services import video as video_svc
 from app.services import placement as placement_svc
 from app.services import report as report_svc
 
@@ -55,6 +56,7 @@ def dashboard(user: User = Depends(api_user), db: OrmSession = Depends(get_db)):
                         "at": s.submitted_at.strftime("%d/%m %H:%M")} for s, a in subs],
             "units": [{"id": u["unit"].id, "title": u["unit"].title, "percent": u["percent"],
                        "lessons": len(u["lessons"])} for u in plan],
+            "videos": video_svc.student_summary(db, user),
         })
 
     elif user.role == "teacher":

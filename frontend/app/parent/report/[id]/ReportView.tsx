@@ -9,6 +9,7 @@ import WeeklyChart from "@/components/WeeklyChart";
 type Report = {
   student: { id: number; name: string; cefr: string | null };
   minutes: number; submitted: number;
+  videos?: { videos_total: number; videos_completed: number; watched_seconds: number; percent: number };
   skills: { skill: string; label: string; avg: number; count: number; weak: boolean }[];
   weakest: { label: string; avg: number } | null;
   weekly: { label: string; minutes: number }[];
@@ -38,6 +39,9 @@ export default function ReportView({ studentId }: { studentId: string }) {
 
       <div className="card stats">
         <span><b>{report.minutes}</b> phút học</span>
+        {report.videos && report.videos.videos_total > 0 && (
+          <span><b>{report.videos.videos_completed}/{report.videos.videos_total}</b> video đã xem xong</span>
+        )}
         <span><b>{report.submitted}</b> bài đã nộp</span>
         <span><b>{report.student.cefr ?? "chưa xếp"}</b> trình độ</span>
       </div>

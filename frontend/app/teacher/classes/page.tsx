@@ -217,7 +217,7 @@ export default function TeacherClassesPage() {
                   {detail.assignments.map((a) => (
                     <tr key={a.id}>
                       <td>{a.title}</td>
-                      <td>{a.kind === "writing" ? "Viết" : a.kind === "placement" ? "Placement" : "Trắc nghiệm"}</td>
+                      <td>{a.kind === "writing" ? "Viết" : a.kind === "speaking" ? "Nói" : a.kind === "placement" ? "Kiểm tra đầu vào" : "Trắc nghiệm"}</td>
                       <td>{a.deadline ? new Date(a.deadline).toLocaleString("vi-VN") : "—"}</td>
                       <td>{a.max_attempts}</td>
                     </tr>

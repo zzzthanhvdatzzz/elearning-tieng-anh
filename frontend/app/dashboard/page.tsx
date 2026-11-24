@@ -67,7 +67,42 @@ function StudentDash({ d }: { d: Any }) {
         <Stat value={d.summary.lessons_done} label="bài đã hoàn thành" />
         <Stat value={Math.round(d.summary.total_seconds / 60)} label="phút đã học" />
         <Stat value={d.todo_count} label="bài cần làm" />
+        {d.videos && d.videos.videos_total > 0 && (
+          <Stat value={`${d.videos.videos_completed}/${d.videos.videos_total}`}
+                label="video đã xem xong" />
+        )}
       </div>
+
+      {d.videos && d.videos.videos_total > 0 && (
+        <div className="card">
+          <div className="row-between">
+            <h2>Video bài giảng</h2>
+            <Link className="link" href="/units">Xem tất cả bài →</Link>
+          </div>
+          <div className="video-progress-track" style={{ marginBottom: ".6rem" }}>
+            <div className={`video-progress-fill${d.videos.percent === 100 ? " done" : ""}`}
+                 style={{ width: `${d.videos.percent}%` }} />
+          </div>
+          <p className="video-progress-text">
+            Đã xem xong <b>{d.videos.videos_completed}/{d.videos.videos_total}</b> video bài giảng
+            {d.videos.watched_seconds > 0 && ` · tổng ${Math.round(d.videos.watched_seconds / 60)} phút`}
+          </p>
+          {d.videos.items.some((v: { completed: boolean }) => !v.completed) && (
+            <ul className="lesson-list">
+              {d.videos.items
+                .filter((v: { completed: boolean }) => !v.completed)
+                .slice(0, 3)
+                .map((v: { lesson_id: number; title: string; percent: number }) => (
+                  <li key={v.lesson_id}>
+                    <span>{v.title}</span>
+                    <span className="muted">đã xem {v.percent}%</span>
+                    <Link className="link" href={`/lesson/${v.lesson_id}`}>Xem tiếp →</Link>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {d.next ? (
         <div className="card nextup">
